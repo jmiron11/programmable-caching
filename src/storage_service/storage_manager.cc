@@ -1,47 +1,114 @@
-#include <grpcpp/grpcpp.h>
-
+#include "storage_manager.h"
 #include "proto/storage_service.grpc.pb.h"
+
+#include <grpcpp/grpcpp.h>
+#include <glog/logging.h>
+
+#include <string>
+#include <thread>
+#include <chrono>
 
 using grpc::Channel;
 using grpc::ClientContext;
 using grpc::Status;
+using grpc::Server;
+using grpc::ServerBuilder;
+using grpc::ServerContext;
+using grpc::Status;
+using std::string;
 
-class StorageManagerClient {
- public:
-  StorageManagerClient(std::shared_ptr<Channel> channel)
-      : stub_(Master::NewStub(channel)) {}
+StorageManager::StorageMasterInterface::StorageMasterInterface(
+  const std::string& hostname, const std::string& port) {
+	stub_ = MasterService::NewStub(grpc::CreateChannel(
+	                                 hostname + ":" + port,
+	                                 grpc::InsecureChannelCredentials()));
+}
 
-  // Assembles the client's payload, sends it and presents the response back
-  // from the server.
-  int SayHello() {
-    // Data we are sending to the server.
-    IntroduceRequest request;
-    request.set_storage_type(StorageType::EPHEMERAL);
+Status StorageManager::StorageMasterInterface::IntroduceToMaster() {
+	IntroduceRequest request;
+	request.set_storage_type(StorageType::EPHEMERAL);
 
-    // Container for the data we expect from the server.
-    IntroduceReply reply;
-    ClientContext context;
-    Status status = stub_->Introduce(&context, request, &reply);
+	IntroduceReply reply;
+	ClientContext context;
+	return stub_->Introduce(&context, request, &reply);
+}
 
-    // Act upon its status.
-    if (status.ok()) {
-      std::cout << reply.name() << std::endl;
-      return 0;
-    }
-    else{
-      std::cout << status.error_code() << ": " << status.error_message()
-                << std::endl;
-      return -1;
-    }
-  }
+Status StorageManager::StorageMasterInterface::HeartbeatToMaster() {
+	HeartbeatRequest request;
+	HeartbeatReply reply;
+	ClientContext context;
+	return stub_->Heartbeat(&context, request, &reply);
+}
 
- private:
-  std::unique_ptr<Master::Stub> stub_;
-};
+StorageManager::StorageManager(const std::string& manager_hostname,
+                               const std::string& manager_port,
+                               const std::string& master_hostname,
+                               const std::string& master_port,
+                               int master_heartbeat_interval_seconds)
+	: master_interface_(master_hostname, master_port),
+	  heartbeat_thread_(&StorageManager::IntroduceAndHeartbeat, this,
+	                    master_heartbeat_interval_seconds) {
+	ManageStorage(manager_hostname, manager_port);
+}
 
-int main(int argc, char** argv) {
-  StorageManagerClient manager(grpc::CreateChannel(
-      "localhost:50051", grpc::InsecureChannelCredentials()));
-  int reply = manager.SayHello();
-  return 0;
+StorageManager::~StorageManager() {
+	heartbeat_thread_.join();
+}
+
+void StorageManager::ManageStorage(const std::string& hostname,
+                                   const std::string& port) {
+	// Connect to storage medium
+
+	// Begin processing of storage management RPCs.
+	InitializeAndHandleRPCs(hostname, port);
+}
+
+void StorageManager::InitializeAndHandleRPCs(const string& hostname,
+    const string& port) {
+	std::string server_address(hostname + ':' + port);
+
+	ServerBuilder builder;
+	// Listen on the given address without any authentication mechanism.
+	builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
+	// Register "service" as the instance through which we'll communicate with
+	// clients. In this case it corresponds to an *synchronous* service.
+	builder.RegisterService(this);
+	// Finally assemble the server.
+	std::unique_ptr<Server> server(builder.BuildAndStart());
+	std::cout << "Server listening on " << server_address << std::endl;
+
+	// Wait for the server to shutdown. Note that some other thread must be
+	// responsible for shutting down the server for this call to ever return.
+	server->Wait();
+}
+
+
+void StorageManager::IntroduceAndHeartbeat(int heartbeat_interval) {
+	Status s = master_interface_.IntroduceToMaster();
+
+	// TODO(justinmiron): Implement better error handling on failure to introduce.
+	if (s.ok())
+		LOG(INFO) << "Successfully introduced to master";
+	else
+		LOG(WARNING) << "Error introducing to master";
+
+	auto curr_t = std::chrono::system_clock::now();
+
+	while (1) {
+		Status s = master_interface_.HeartbeatToMaster();
+		if (s.ok())
+			LOG(INFO) << "To the beat of a drum";
+		else
+			LOG(WARNING) << "Error heartbeating, this is how it ends.";
+
+		auto next_t = curr_t + std::chrono::seconds{heartbeat_interval};
+		std::this_thread::sleep_until(next_t);
+		curr_t = next_t;
+	}
+}
+
+Status StorageManager::CopyFrom(ServerContext* context,
+                                const CopyFromRequest* request,
+                                CopyFromReply* reply) {
+	return Status::OK;
 }

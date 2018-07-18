@@ -6,16 +6,35 @@ cc_binary(
 	name = "storage_master",
 	srcs = ["storage_master.cc"],
 	deps = [
-	"//proto:storage_service_proto"
+	"//proto:storage_service_proto",
+	"@glog//:glog"
+	] + GRPC_COMPILE_DEPS
+)
+
+cc_library(
+	name = "storage_manager",
+	srcs = ["storage_manager.cc"],
+	hdrs = ["storage_manager.h"],
+	deps = [
+	":storage_interface",
+	"//proto:storage_service_proto",
+		"@glog//:glog"
 	] + GRPC_COMPILE_DEPS
 )
 
 cc_binary(
-	name = "storage_manager",
-	srcs = ["storage_manager.cc"],
+	name = "storage_manager_binary",
+	srcs = ["storage_manager_binary.cc"],
 	deps = [
-	"//proto:storage_service_proto"
-	] + GRPC_COMPILE_DEPS
+		":storage_manager",
+		"@gflags//:gflags",
+		"@glog//:glog"
+	]
+)
+
+cc_library(
+	name = "storage_interface",
+	hdrs = ["storage_interface.h"]
 )
 
 cc_test(

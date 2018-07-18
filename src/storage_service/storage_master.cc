@@ -1,5 +1,6 @@
 
 #include <grpcpp/grpcpp.h>
+#include <glog/logging.h>
 
 #include "proto/storage_service.grpc.pb.h"
 
@@ -8,11 +9,16 @@ using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::Status;
 
-
-class MasterServiceImpl final : public Master::Service {
+class MasterServiceImpl final : public MasterService::Service {
   Status Introduce(ServerContext* context, const IntroduceRequest* request,
-                  IntroduceReply* reply) override {
-    reply->set_name("potato");
+                   IntroduceReply* reply) override {
+    LOG(INFO) << "introduction received";
+    return Status::OK;
+  }
+
+  Status Heartbeat(ServerContext* context, const HeartbeatRequest* request,
+                   HeartbeatReply* reply) override {
+    LOG(INFO) << "heartbeat received from " << context->peer();
     return Status::OK;
   }
 };
@@ -37,6 +43,6 @@ void RunServer() {
 }
 
 int main(int argc, char** argv) {
-	RunServer();
+  RunServer();
   return 0;
 }
