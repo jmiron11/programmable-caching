@@ -1,4 +1,4 @@
-# maestro
+# Maestro
 
 Maestro is a serverless cluster management system that optimizes both data and
 task placement to improve system-wide performance objectives (bandwidth
