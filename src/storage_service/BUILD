@@ -17,3 +17,12 @@ cc_binary(
 	"//proto:storage_service_proto"
 	] + GRPC_COMPILE_DEPS
 )
+
+cc_test(
+	name = "storage_manager_test",
+	srcs = ["storage_manager_test.cc"],
+  copts = ["-Iexternal/gtest"],
+	deps = [
+		"@gtest//:gtest_main"
+	]
+)

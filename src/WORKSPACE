@@ -6,3 +6,9 @@ git_repository(
 
 load("@org_pubref_rules_protobuf//cpp:rules.bzl", "cpp_proto_repositories")
 cpp_proto_repositories()
+
+git_repository(
+    name = "gtest",
+    remote = "https://github.com/google/googletest.git",
+    commit = "077ee54cefd247656ac9a995e150e0d1ab9d0bf7",
+)
