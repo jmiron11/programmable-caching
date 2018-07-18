@@ -1,11 +1,15 @@
 # maestro
 
-third_party
+Maestro is a serverless cluster management system that optimizes both data and
+task placement to improve system-wide performance objectives (bandwidth
+requirement reduction, system utilization), and job performance objectives
+(JCT).
 
-protobuf install
-https://github.com/google/protobuf/blob/master/src/README.md
+# Dependencies
+ * protobuf
+ * gRPC
+ * googletest
+ * glog
 
-gRPC install
-https://github.com/grpc/grpc/blob/master/BUILDING.md
-
-googletest
+Maestro uses the bazel build system to retrieve dependencies. 
+Bazel installation instructions can be found [here](https://docs.bazel.build/versions/master/install.html).
