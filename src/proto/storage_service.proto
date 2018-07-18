@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+service Master {
+	rpc Introduce (IntroduceRequest) returns (IntroduceReply) {}
+} 
+
+service StorageManager {
+	rpc CopyFrom (CopyFromRequest) returns (CopyFromReply) {}
+}
+
+// Enumerates the storage types storage managers can interface with.
+enum StorageType {
+	EPHEMERAL = 0;
+	AMAZONS3 = 1;
+}
+
+message IntroduceRequest {
+	StorageType storage_type = 1;
+}
+
+message IntroduceReply {
+	string name = 1;
+}
+
+message CopyFromRequest {
+	int64 param = 1;
+}
+
+message CopyFromReply {
+}
