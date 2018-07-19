@@ -8,29 +8,114 @@ load("@org_pubref_rules_protobuf//cpp:rules.bzl", "cpp_proto_repositories")
 cpp_proto_repositories()
 
 git_repository(
-    name = "gtest",
+    name = "gtest_repo",
     remote = "https://github.com/google/googletest.git",
     commit = "077ee54cefd247656ac9a995e150e0d1ab9d0bf7",
 )
 
+bind (
+    name = "gtest",
+    actual = "@gtest_repo//:gtest_main"
+)
+
 git_repository(
-    name = "gflags",
+    name = "com_github_gflags_gflags",
     remote = "https://github.com/gflags/gflags.git",
     commit = "660603a3df1c400437260b51c55490a046a12e8a",
 )
 
-http_archive(
-    name = "com_github_gflags_gflags",
-    sha256 = "6e16c8bc91b1310a44f3965e616383dbda48f83e8c1eaa2370a215057b00cabe",
-    strip_prefix = "gflags-77592648e3f3be87d6c7123eb81cbad75f9aef5a",
-    urls = [
-        "https://mirror.bazel.build/github.com/gflags/gflags/archive/77592648e3f3be87d6c7123eb81cbad75f9aef5a.tar.gz",
-        "https://github.com/gflags/gflags/archive/77592648e3f3be87d6c7123eb81cbad75f9aef5a.tar.gz",
-    ],
+bind(
+    name = "gflags",
+    actual = "@com_github_gflags_gflags//:gflags"
 )
 
 git_repository(
-		name = "glog",
+		name = "glog_repo",
 		remote = "https://github.com/google/glog.git",
 		commit = "8d7a107d68c127f3f494bb7807b796c8c5a97a82"
+)
+
+bind(
+    name = "glog",
+    actual = "@glog_repo//:glog"
+)
+
+new_http_archive(
+    name = "snappy_archive",
+    url = "https://github.com/google/snappy/archive/ed3b7b2.tar.gz",
+    strip_prefix = "snappy-ed3b7b242bd24de2ca6750c73f64bee5b7505944",
+    sha256 = "88a644b224f54edcd57d01074c2d6fd6858888e915c21344b8622c133c35a337",
+    build_file = "//:third_party/snappy.BUILD",
+)
+bind(
+    name = "snappy",
+    actual = "@snappy_archive//:snappy",
+)
+bind(
+    name = "snappy_config",
+    actual = "//third_party/snappy:config"
+)
+
+new_git_repository(
+    name = "libunwind_git",
+    remote = "git://git.sv.gnu.org/libunwind.git",
+    tag = "v1.1", # Note: update the version in BUILD file
+    build_file = "//:third_party/libunwind.BUILD",
+)
+bind(
+    name = "libunwind",
+    actual = "@libunwind_git//:libunwind",
+)
+bind(
+    name = "libunwind_config",
+    actual = "//third_party/libunwind:config",
+)
+
+new_http_archive(
+    name = "jemalloc_archive",
+    url = "https://github.com/jemalloc/jemalloc/archive/4.5.0.tar.gz",
+    strip_prefix = "jemalloc-4.5.0",
+    sha256 = "e885b65b95426945655ee91a30f563c9679770c92946bcdd0795f6b78c06c221",
+    build_file = "//:third_party/jemalloc.BUILD",
+)
+bind(
+    name = "jemalloc",
+    actual = "@jemalloc_archive//:jemalloc",
+)
+bind(
+    name = "jemalloc_config",
+    actual = "//third_party/jemalloc:config"
+)
+
+new_http_archive(
+    name = "zlib_archive",
+    url = "https://github.com/madler/zlib/archive/v1.2.11.tar.gz",
+    strip_prefix = "zlib-1.2.11",
+    sha256 = "629380c90a77b964d896ed37163f5c3a34f6e6d897311f1df2a7016355c45eff",
+    build_file = "//:third_party/zlib.BUILD",
+)
+bind(
+    name = "zlib",
+    actual = "@zlib_archive//:zlib",
+)
+
+new_git_repository(
+    name = "rocksdb_git",
+    remote = "https://github.com/facebook/rocksdb.git",
+    tag = "v5.7.3",
+    build_file = "//:third_party/rocksdb.BUILD",
+)
+bind(
+    name = "rocksdb",
+    actual = "@rocksdb_git//:rocksdb",
+)
+
+http_archive(
+    name = "com_github_meltwater_served",
+    url = "https://github.com/meltwater/served/archive/430d7129505f54cc0db6b6375977f08b8f2ba162.tar.gz",
+    strip_prefix = "served-430d7129505f54cc0db6b6375977f08b8f2ba162",
+)
+bind(
+    name = "served",
+    actual = "@com_github_meltwater_served//:served",
 )

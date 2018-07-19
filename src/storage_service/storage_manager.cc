@@ -24,9 +24,10 @@ StorageManager::StorageMasterInterface::StorageMasterInterface(
 	                                 grpc::InsecureChannelCredentials()));
 }
 
-Status StorageManager::StorageMasterInterface::IntroduceToMaster() {
+Status StorageManager::StorageMasterInterface::IntroduceToMaster(
+  StorageType type) {
 	IntroduceRequest request;
-	request.set_storage_type(StorageType::EPHEMERAL);
+	request.set_storage_type(type);
 
 	IntroduceReply reply;
 	ClientContext context;
@@ -57,14 +58,7 @@ StorageManager::~StorageManager() {
 
 void StorageManager::ManageStorage(const std::string& hostname,
                                    const std::string& port) {
-	// Connect to storage medium
-
 	// Begin processing of storage management RPCs.
-	InitializeAndHandleRPCs(hostname, port);
-}
-
-void StorageManager::InitializeAndHandleRPCs(const string& hostname,
-    const string& port) {
 	std::string server_address(hostname + ':' + port);
 
 	ServerBuilder builder;
@@ -84,7 +78,8 @@ void StorageManager::InitializeAndHandleRPCs(const string& hostname,
 
 
 void StorageManager::IntroduceAndHeartbeat(int heartbeat_interval) {
-	Status s = master_interface_.IntroduceToMaster();
+	Status s = master_interface_.IntroduceToMaster(
+	             storage_interface_->StorageTypeIdentifier());
 
 	// TODO(justinmiron): Implement better error handling on failure to introduce.
 	if (s.ok())

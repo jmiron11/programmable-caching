@@ -13,3 +13,9 @@ requirement reduction, system utilization), and job performance objectives
 
 Maestro uses the bazel build system to retrieve dependencies. 
 Bazel installation instructions can be found [here](https://docs.bazel.build/versions/master/install.html).
+
+
+# Pre-requisites
+libcurl4-openssl-dev libssl-dev uuid-dev zlib1g-dev libpulse-dev
+
+Setup Amazon C++ SDK: [Setup](https://docs.aws.amazon.com/sdk-for-cpp/v1/developer-guide/setup.html)
