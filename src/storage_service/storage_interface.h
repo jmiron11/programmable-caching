@@ -23,7 +23,10 @@ class StorageInterface {
  	virtual Status Put(const std::string& key, const std::string& value) = 0;
 
  	// Return identification string of storage medium
- 	virtual StorageType StorageTypeIdentifier() = 0;
+ 	virtual StorageType GetStorageType() = 0;
+
+ 	// Returns the storage enum of storage medium
+ 	virtual StorageName GetStorageName() = 0;
 };
 
 #endif

@@ -2,6 +2,7 @@
 #include "rocksdb_storage_interface.h"
 
 #include <memory>
+#include <glog/logging.h>
 
 RocksDbStorageManager::RocksDbStorageManager(const std::string&
     manager_hostname,
@@ -11,5 +12,5 @@ RocksDbStorageManager::RocksDbStorageManager(const std::string&
     int master_heartbeat_interval_seconds,
     const std::string& db_path): StorageManager(manager_hostname, manager_port,
 	        master_hostname, master_port, master_heartbeat_interval_seconds) {
- storage_interface_.reset(new RocksDbStorageInterface(db_path));
+	storage_interface_.reset(new RocksDbStorageInterface(db_path));
 }

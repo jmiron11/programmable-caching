@@ -14,7 +14,8 @@ class S3StorageInterface : public StorageInterface {
 	                						 std::string* value) override;
 	StorageInterface::Status Put(const std::string& key,
 	                             const std::string& value) override;
-	StorageType StorageTypeIdentifier() override { return StorageType::AMAZONS3; }
+	StorageType GetStorageType() override { return StorageType::UNMANAGED; }
+	StorageName GetStorageName() override { return StorageName::AMAZONS3; }
  private:
  
 };

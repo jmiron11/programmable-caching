@@ -3,20 +3,32 @@ syntax = "proto3";
 service MasterService {
 	rpc Introduce (IntroduceRequest) returns (IntroduceReply) {}
 	rpc Heartbeat (HeartbeatRequest) returns (HeartbeatReply) {}
+	rpc InformOperation(InformRequest) returns (InformReply) {}
 } 
 
 service StorageManagerService {
+	rpc Put(PutRequest) returns (PutReply) {}
+	rpc Get (GetRequest) returns (GetReply) {}
 	rpc CopyFrom (CopyFromRequest) returns (CopyFromReply) {}
+	rpc DisseminateStorageManagers (DisseminateRequest) returns (DisseminateReply) {} 
 }
 
 // Enumerates the storage types storage managers can interface with.
-enum StorageType {
+enum StorageName {
 	EPHEMERAL = 0;
 	AMAZONS3 = 1;
 }
 
+enum StorageType {
+	MANAGED = 0;
+	UNMANAGED = 1;
+}
+
 message IntroduceRequest {
 	StorageType storage_type = 1;
+	StorageName storage_name = 2;
+	string rpc_hostname = 3;
+	string rpc_port = 4;
 }
 
 message IntroduceReply {
@@ -30,5 +42,31 @@ message CopyFromRequest {
 	int64 param = 1;
 }
 
-message CopyFromReply {
+message CopyFromReply {}
+
+
+message DisseminateRequest{
+	message ManagerDelta{
+		bool add_if_true = 1;
+		string name = 2;
+		string uri = 3;
+	}
+
+	repeated ManagerDelta delta = 1;
 }
+
+message DisseminateReply{}
+
+message GetRequest {}
+
+message GetReply {
+	string value = 1;
+}
+
+message PutRequest {}
+
+message PutReply {}
+
+message InformRequest {}
+
+message InformReply{}

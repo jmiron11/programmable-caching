@@ -11,9 +11,7 @@ RocksDbStorageInterface::RocksDbStorageInterface(std::string db_path) {
 	rocksdb::Status s = rocksdb::DB::Open(options, db_path, &db_);
 	if (!s.ok()) {
 		LOG(ERROR) << s.ToString();
-
 	}
-	assert(s.ok());
 }
 
 RocksDbStorageInterface::~RocksDbStorageInterface() {

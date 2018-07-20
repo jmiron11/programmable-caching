@@ -25,13 +25,19 @@ StorageManager::StorageMasterInterface::StorageMasterInterface(
 }
 
 Status StorageManager::StorageMasterInterface::IntroduceToMaster(
-  StorageType type) {
+  StorageType type, StorageName name, const std::string& port,
+  const std::string& hostname, std::string* assigned_name) {
 	IntroduceRequest request;
 	request.set_storage_type(type);
+	request.set_storage_name(name);
+	request.set_rpc_port(port);
+	request.set_rpc_hostname(hostname);
 
 	IntroduceReply reply;
 	ClientContext context;
-	return stub_->Introduce(&context, request, &reply);
+	Status s = stub_->Introduce(&context, request, &reply);
+	*assigned_name = reply.name();
+	return s;
 }
 
 Status StorageManager::StorageMasterInterface::HeartbeatToMaster() {
@@ -47,9 +53,17 @@ StorageManager::StorageManager(const std::string& manager_hostname,
                                const std::string& master_port,
                                int master_heartbeat_interval_seconds)
 	: master_interface_(master_hostname, master_port),
-	  heartbeat_thread_(&StorageManager::IntroduceAndHeartbeat, this,
-	                    master_heartbeat_interval_seconds) {
-	ManageStorage(manager_hostname, manager_port);
+	  manager_hostname_(manager_hostname),
+	  manager_port_(manager_port),
+	  master_hostname_(master_hostname),
+	  master_port_(master_port),
+	  master_heartbeat_interval_seconds_(master_heartbeat_interval_seconds) { }
+
+void StorageManager::Start() {
+	heartbeat_thread_ = std::thread(&StorageManager::IntroduceAndHeartbeat, this,
+	                                master_heartbeat_interval_seconds_, manager_port_,
+	                                manager_hostname_);
+	ManageStorage(manager_hostname_, manager_port_);
 }
 
 StorageManager::~StorageManager() {
@@ -66,7 +80,7 @@ void StorageManager::ManageStorage(const std::string& hostname,
 	builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
 	// Register "service" as the instance through which we'll communicate with
 	// clients. In this case it corresponds to an *synchronous* service.
-	builder.RegisterService(this);
+	builder.RegisterService((StorageManager*)this);
 	// Finally assemble the server.
 	std::unique_ptr<Server> server(builder.BuildAndStart());
 	std::cout << "Server listening on " << server_address << std::endl;
@@ -76,10 +90,12 @@ void StorageManager::ManageStorage(const std::string& hostname,
 	server->Wait();
 }
 
-
-void StorageManager::IntroduceAndHeartbeat(int heartbeat_interval) {
+void StorageManager::IntroduceAndHeartbeat(int heartbeat_interval,
+    std::string manager_port, std::string manager_host) {
 	Status s = master_interface_.IntroduceToMaster(
-	             storage_interface_->StorageTypeIdentifier());
+	             storage_interface_->GetStorageType(),
+	             storage_interface_->GetStorageName(),
+	             manager_port, manager_host, &name_);
 
 	// TODO(justinmiron): Implement better error handling on failure to introduce.
 	if (s.ok())
@@ -100,6 +116,45 @@ void StorageManager::IntroduceAndHeartbeat(int heartbeat_interval) {
 		std::this_thread::sleep_until(next_t);
 		curr_t = next_t;
 	}
+}
+
+void StorageManager::OffloadDisseminateStorageManagers(
+  std::vector<std::pair<std::string, std::string>> name_uri) {
+
+	for(auto& mgr : name_uri) {
+		if (mgr.first != name_) {
+			manager_view.Add(mgr.first, mgr.second);
+		}
+	}
+}
+
+Status StorageManager::DisseminateStorageManagers(ServerContext* context,
+    const DisseminateRequest* request,
+    DisseminateReply* reply) {
+	LOG(INFO) << "Got dissemination!";
+	std::vector<std::pair<std::string, std::string>> name_uris;
+
+	for (auto& mgr : request->delta())	{
+		name_uris.push_back(std::pair<std::string, std::string>(mgr.name(), mgr.uri()));
+	}
+
+	std::thread t(&StorageManager::OffloadDisseminateStorageManagers, this,
+	              name_uris);
+	t.detach();
+
+	return Status::OK;
+}
+
+Status StorageManager::Get(ServerContext* context,
+                           const GetRequest* request,
+                           GetReply* reply) {
+	return Status::OK;
+}
+
+Status StorageManager::Put(ServerContext* context,
+                                const PutRequest* request,
+                                PutReply* reply) {
+	return Status::OK;
 }
 
 Status StorageManager::CopyFrom(ServerContext* context,

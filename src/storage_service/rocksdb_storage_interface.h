@@ -15,7 +15,8 @@ class RocksDbStorageInterface : public StorageInterface {
 	                						 std::string* value) override;
 	StorageInterface::Status Put(const std::string& key,
 	                             const std::string& value) override;
-	StorageType StorageTypeIdentifier() override { return StorageType::EPHEMERAL; }
+	StorageType GetStorageType() override { return StorageType::MANAGED; }
+	StorageName GetStorageName() override { return StorageName::EPHEMERAL; }
  private:
 	rocksdb::DB* db_;
 };

@@ -6,7 +6,7 @@
 
 // Wrapper around storage manager to initialize the correct storage
 // interface.
-class RocksDbStorageManager : StorageManager {
+class RocksDbStorageManager : public StorageManager {
  public:
 	RocksDbStorageManager(const std::string& manager_hostname,
 	                      const std::string& manager_port,

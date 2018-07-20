@@ -18,6 +18,7 @@ int main(int argc, char** argv) {
 	                                      FLAGS_master_port,
 	                                      FLAGS_master_heartbeat_interval_seconds,
 	                                      FLAGS_db_path);
+	storage_manager.Start();
 
 	gflags::ShutDownCommandLineFlags();
 	return 0;
