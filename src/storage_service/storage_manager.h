@@ -48,10 +48,14 @@ class StorageManager : public StorageManagerService::Service {
 	Status Put(ServerContext* context,
 	           const PutRequest* request,
 	           PutReply* reply) override;
-	
+
 	Status Get(ServerContext* context,
 	           const GetRequest* request,
 	           GetReply* reply) override;
+
+	Status Remove(ServerContext* context,
+	           const RemoveRequest* request,
+	           RemoveReply* reply) override;
 
  protected:
 	// Storage interface for accesss to the managed storage medium.

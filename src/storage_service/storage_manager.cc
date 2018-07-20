@@ -154,6 +154,16 @@ Status StorageManager::Get(ServerContext* context,
 Status StorageManager::Put(ServerContext* context,
                                 const PutRequest* request,
                                 PutReply* reply) {
+	// Puts file in database
+	// Send RPC to master informing of operation
+	return Status::OK;
+}
+
+Status StorageManager::Remove(ServerContext* context,
+                                const RemoveRequest* request,
+                                RemoveReply* reply) {
+	// Remove file from db
+	// Send RPC to master informing of operation
 	return Status::OK;
 }
 

@@ -9,6 +9,7 @@ service MasterService {
 service StorageManagerService {
 	rpc Put(PutRequest) returns (PutReply) {}
 	rpc Get (GetRequest) returns (GetReply) {}
+	rpc Remove (RemoveRequest) returns (RemoveReply) {}
 	rpc CopyFrom (CopyFromRequest) returns (CopyFromReply) {}
 	rpc DisseminateStorageManagers (DisseminateRequest) returns (DisseminateReply) {} 
 }
@@ -70,3 +71,7 @@ message PutReply {}
 message InformRequest {}
 
 message InformReply{}
+
+message RemoveRequest {}
+
+message RemoveReply{}
