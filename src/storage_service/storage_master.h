@@ -39,6 +39,16 @@ class StorageMaster final : public MasterService::Service {
   Status Heartbeat(ServerContext* context, const Empty* request,
                    Empty* reply) override;
 
+  Status InstallRule(ServerContext* context,
+                     const InstallRuleRequest* request,
+                     Empty* reply) override;
+
+  Status RemoveRule(ServerContext* context,
+                    const RemoveRuleRequest* request,
+                    Empty* reply) override;
+
+  void FillInRule(Rule* rule);
+
   void OffloadIntroduce(std::string name, std::string peer);
 
  private:

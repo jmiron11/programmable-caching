@@ -87,3 +87,33 @@ Status StorageMaster::Heartbeat(ServerContext * context,
   LOG(INFO) << "heartbeat received from " << context->peer();
   return Status::OK;
 }
+
+void StorageMaster::FillInRule(Rule* rule) {
+  // Switch statement based on action types, then set mgr's uri field in action.
+}
+
+Status StorageMaster::InstallRule(ServerContext* context,
+                                  const InstallRuleRequest* request,
+                                  Empty* reply) {
+  InstallRuleRequest new_request = *request;
+
+  // Get uri of client
+  std::string client_uri = peer_tracker_.GetUri(request->client());
+
+  // Create stub to client
+
+  // Update rule request to fill in actions with mgr details
+  FillInRule(new_request.mutable_rule());
+
+  // send rule request to client
+
+  
+  return Status::OK;
+}
+
+Status StorageMaster::RemoveRule(ServerContext* context,
+                                 const RemoveRuleRequest* request,
+                                 Empty* reply) {
+  // Same flow as Install Rule
+  return Status::OK;
+}

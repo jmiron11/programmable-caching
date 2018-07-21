@@ -4,6 +4,8 @@ service MasterService {
 	rpc Introduce (IntroduceRequest) returns (IntroduceReply) {}
 	rpc Heartbeat (Empty) returns (Empty) {}
 	rpc SendDelta(Delta) returns (Empty) {}
+	rpc InstallRule(InstallRuleRequest) returns (Empty) {}
+	rpc RemoveRule(RemoveRuleRequest) returns (Empty) {}
 } 
 
 service StorageManagerService {
@@ -99,22 +101,26 @@ message Rule {
 		REMOVE = 2;		// removes from src_mgr
 	}	
 
-	message Action {	
+	message Manager {
+		string name = 1; // populated by scheduler
+		string uri = 2; // populated by storage master
+	}
 
+	message Action {	
 		message GetAction {
 			string key = 1;
-			string mgr = 2;
+			Manager mgr = 2;
 		}
 
 		message CopyFromAction {
 			string key = 1;
-			string src_mgr = 2;
-			string dst_mgr = 3;
+			Manager src_mgr = 2;
+			Manager dst_mgr = 3;
 		}
 
 		message RemoveAction {
 			string key = 1;
-			string mgr = 2;	
+			Manager mgr = 2;	
 		}
 
 		oneof action_type {
@@ -126,13 +132,15 @@ message Rule {
 	
 	OperationType op_type = 1;
 	string key = 2;
-	repeated Action action = 3;
+	repeated Action action = 4;
 }
 
 message InstallRuleRequest {
-
+	string client = 1;
+	Rule rule = 2;
 }
 
 message RemoveRuleRequest {
-
+	string client = 1;
+	Rule rule = 2;
 }
