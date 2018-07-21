@@ -23,6 +23,51 @@ void StorageMaster::PeerTracker::AddPeer(const std::string& name,
   name_to_uri_[name] = uri;
 }
 
+void StorageMaster::StorageFileView::ManagerFileView::AddFile(
+  const std::string& file_key) {
+  file_keys[file_key] = 0;
+}
+
+void StorageMaster::StorageFileView::ManagerFileView::RemoveFile(
+  const std::string& file_key) {
+  file_keys.erase(file_key);
+}
+
+void StorageMaster::StorageFileView::ManagerFileView::PopulateManagerViewReply(
+  GetViewReply::ManagerView* view_reply) const {
+  for(const auto& files : file_keys) {
+    view_reply->add_key(files.first);
+  }
+}
+
+void StorageMaster::StorageFileView::AddFileToManager(const std::string&
+    manager_name,
+    const std::string& file_key) {
+  StorageMaster::StorageFileView::ManagerFileView& view =
+    manager_views[manager_name];
+  view.AddFile(file_key);
+}
+
+void StorageMaster::StorageFileView::RemoveFileFromManager(
+  const std::string& manager_name,
+  const std::string& file_key) {
+  StorageMaster::StorageFileView::ManagerFileView& view =
+    manager_views[manager_name];
+  view.RemoveFile(file_key);
+}
+
+void StorageMaster::StorageFileView::PopulateViewReply(GetViewReply * reply) const {
+  for (const auto& name_view_pair : manager_views) {
+    const std::string& name = name_view_pair.first;
+    const StorageMaster::StorageFileView::ManagerFileView& view =
+      name_view_pair.second;
+
+    GetViewReply::ManagerView* msg_manager_view = reply->add_view();
+    msg_manager_view->set_name(name);
+    view.PopulateManagerViewReply(msg_manager_view);
+  }
+}
+
 StorageMaster::StorageMaster(const std::string& hostname,
                              const std::string& port):
   master_hostname_(hostname), master_port_(port) {}
@@ -36,21 +81,9 @@ void StorageMaster::Start() {
   LOG(INFO) << "Storage master listening on " << server_address;
 }
 
-void StorageMaster::MasterThread() {
-  std::string server_address(master_hostname_ + ':' + master_port_);
-  ServerBuilder builder;
-  builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
-  builder.RegisterService(this);
-  server_ = builder.BuildAndStart();
-  LOG(INFO) << "Storage master listening on " << server_address;
-}
-
 void StorageMaster::Stop() {
-  LOG(INFO) << "tried";
   server_->Shutdown();
-  LOG(INFO) << "Shutdown";
-  // master_thread_.join();
-  LOG(INFO) << "Stopped";
+  LOG(INFO) << "Storage master shut down";
 }
 
 std::string StorageMaster::GenerateName(const IntroduceRequest& request) {
@@ -82,8 +115,16 @@ Status StorageMaster::Introduce(ServerContext * context,
   case IntroduceRequest::kStorageManager: {
     IntroduceRequest::StorageManagerIntroduce introduce =
       request->storage_manager();
+
     std::string uri = introduce.rpc_hostname() + ":" + introduce.rpc_port();
+  
+    // Begin tracking peer 
     peer_tracker_.AddPeer(name, uri);
+
+    // Add files to the file manager
+    for(const auto& file_id : introduce.file()) {
+      file_view_.AddFileToManager(name, file_id.key());
+    }
     break;
   }
   case IntroduceRequest::kStorageClient: {
@@ -138,7 +179,14 @@ Status StorageMaster::RemoveRule(ServerContext* context,
 }
 
 Status StorageMaster::StorageChange(ServerContext* context,
-                                const StorageChangeRequest* request,
-                                Empty* reply) {
+                                    const StorageChangeRequest* request,
+                                    Empty* reply) {
+  return Status::OK;
+}
+
+Status StorageMaster::GetView(ServerContext* context,
+                              const Empty* request,
+                              GetViewReply* reply) {
+  file_view_.PopulateViewReply(reply);
   return Status::OK;
 }

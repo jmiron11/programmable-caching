@@ -24,8 +24,28 @@ class StorageMaster final : public MasterService::Service {
     std::unordered_map<std::string, std::string> name_to_uri_;
   };
 
+  // Thread safe data structure for managing a global view of the storage
+  // service.
   class StorageFileView {
    public:
+    class ManagerFileView {
+     public:
+      void AddFile(const std::string& file_key);
+      void RemoveFile(const std::string& file_key);
+      void PopulateManagerViewReply(GetViewReply::ManagerView* view_reply) const;
+     private:
+      std::unordered_map <std::string, int> file_keys;
+    };
+
+    void AddFileToManager(const std::string& manager_name,
+                          const std::string& file_key);
+    void RemoveFileFromManager(const std::string& manager_name,
+                               const std::string& file_key);
+    void PopulateViewReply(GetViewReply * reply) const;
+
+   private:
+    std::mutex view_mutex;
+    std::unordered_map<std::string, ManagerFileView> manager_views;
   };
 
   StorageMaster(const std::string& hostname, const std::string& port);
@@ -53,6 +73,11 @@ class StorageMaster final : public MasterService::Service {
   Status RemoveRule(ServerContext* context,
                     const RemoveRuleRequest* request,
                     Empty* reply) override;
+
+  Status GetView(ServerContext* context,
+                 const Empty* request,
+                 GetViewReply* reply) override;
+
 
   void FillInRule(Rule* rule);
 

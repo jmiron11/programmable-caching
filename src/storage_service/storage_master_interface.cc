@@ -47,5 +47,10 @@ Status StorageMasterInterface::RemoveRule(const RemoveRuleRequest& request) {
 	Empty reply;
 	ClientContext context;
 	return stub_->RemoveRule(&context, request, &reply);
+}
 
+Status StorageMasterInterface::GetView(GetViewReply * reply){
+	Empty request;
+	ClientContext context;
+	return stub_->GetView(&context, request, reply);
 }

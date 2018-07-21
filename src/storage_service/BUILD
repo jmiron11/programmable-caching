@@ -137,8 +137,23 @@ cc_test(
   	"-Iexternal/gtest",
   ],
 	deps = [
-		"//external:gtest",
+		":storage_master_interface",
 		":storage_master",
-		"//proto:storage_service_proto"
+		"//proto:storage_service_proto",
+		"//external:gtest"
+	]
+)
+
+cc_test(
+	name = "storage_master_interface_test",
+	srcs = ["storage_master_interface_test.cc"],
+  copts = [
+  	"-Iexternal/gtest",
+  ],
+	deps = [
+		":storage_master_interface",
+		":storage_master",
+		"//proto:storage_service_proto",
+		"//external:gtest"
 	]
 )

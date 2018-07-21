@@ -25,6 +25,8 @@ class StorageMasterInterface {
 
 	Status RemoveRule(const RemoveRuleRequest& request);
 
+	Status GetView(GetViewReply * reply);
+
  private:
 	std::unique_ptr<MasterService::Stub> stub_;
 };

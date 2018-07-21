@@ -6,6 +6,7 @@ service MasterService {
 	rpc StorageChange(StorageChangeRequest) returns (Empty) {}
 	rpc InstallRule(InstallRuleRequest) returns (Empty) {}
 	rpc RemoveRule(RemoveRuleRequest) returns (Empty) {}
+	rpc GetView(Empty) returns (GetViewReply) {}
 } 
 
 service StorageManagerService {
@@ -147,7 +148,17 @@ message StorageChangeRequest {
 
 		OperationType op = 1;
 		string key = 2;
+		string manager = 3;
 	}
 
 	repeated Delta storage_change = 1;
+}
+
+message GetViewReply {
+	message ManagerView {
+		string name = 1;
+		repeated string key = 2; // Keys at the manager
+	}	
+
+	repeated ManagerView view = 1;
 }
