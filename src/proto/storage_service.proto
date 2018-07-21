@@ -2,16 +2,23 @@ syntax = "proto3";
 
 service MasterService {
 	rpc Introduce (IntroduceRequest) returns (IntroduceReply) {}
-	rpc Heartbeat (HeartbeatRequest) returns (HeartbeatReply) {}
-	rpc InformOperation(InformRequest) returns (InformReply) {}
+	rpc Heartbeat (Empty) returns (Empty) {}
+	rpc SendDelta(Delta) returns (Empty) {}
 } 
 
 service StorageManagerService {
-	rpc Put(PutRequest) returns (PutReply) {}
+	rpc Put(PutRequest) returns (Empty) {}
 	rpc Get (GetRequest) returns (GetReply) {}
-	rpc Remove (RemoveRequest) returns (RemoveReply) {}
-	rpc CopyFrom (CopyFromRequest) returns (CopyFromReply) {}
-	rpc DisseminateStorageManagers (DisseminateRequest) returns (DisseminateReply) {} 
+	rpc Remove (RemoveRequest) returns (Empty) {}
+	rpc CopyFrom (CopyFromRequest) returns (Empty) {}
+}
+
+service StorageClientService {
+	rpc Put(PutRequest) returns (Empty) {}
+	rpc Get(GetRequest) returns (GetReply) {}
+	rpc Remove(RemoveRequest) returns (Empty) {}
+	rpc InstallRule(InstallRuleRequest) returns (Empty) {}
+	rpc RemoveRule(RemoveRuleRequest) returns (Empty) {} 
 }
 
 // Enumerates the storage types storage managers can interface with.
@@ -25,53 +32,107 @@ enum StorageType {
 	UNMANAGED = 1;
 }
 
+message Empty {}
+
 message IntroduceRequest {
-	StorageType storage_type = 1;
-	StorageName storage_name = 2;
-	string rpc_hostname = 3;
-	string rpc_port = 4;
+
+	message StorageManagerIntroduce {
+		StorageType storage_type = 1;
+		StorageName storage_name = 2;
+		string rpc_hostname = 3;
+		string rpc_port = 4;
+	}
+
+	message StorageClientIntroduce {
+		string rpc_hostname = 1;
+		string rpc_port = 2;
+	}
+
+	oneof introduce {
+		StorageManagerIntroduce storage_manager = 1;
+		StorageClientIntroduce storage_client = 2;
+	}
 }
 
 message IntroduceReply {
 	string name = 1;
 }
 
-message HeartbeatRequest {}
-message HeartbeatReply {}
-
 message CopyFromRequest {
-	int64 param = 1;
+	string key = 1;
+	string dst_uri = 2;	
 }
 
-message CopyFromReply {}
-
-
-message DisseminateRequest{
-	message ManagerDelta{
-		bool add_if_true = 1;
-		string name = 2;
-		string uri = 3;
-	}
-
-	repeated ManagerDelta delta = 1;
+message GetRequest {
+	string key = 1;
 }
-
-message DisseminateReply{}
-
-message GetRequest {}
 
 message GetReply {
 	string value = 1;
 }
 
-message PutRequest {}
+message PutRequest {
+	string key = 1;
+	string value = 2;
+}
 
 message PutReply {}
 
-message InformRequest {}
+message Delta {
+	enum Operation {
+		ADD = 0;
+		REMOVE = 1;
+	}
 
-message InformReply{}
+	Operation op = 1;
+	string file = 2;
+}
 
-message RemoveRequest {}
+message RemoveRequest {
+	string key = 1;
+}
 
-message RemoveReply{}
+message Rule {
+	enum OperationType {
+		GET = 0;			// 
+		PUT = 1;			// puts in dst_mgr
+		REMOVE = 2;		// removes from src_mgr
+	}	
+
+	message Action {	
+
+		message GetAction {
+			string key = 1;
+			string mgr = 2;
+		}
+
+		message CopyFromAction {
+			string key = 1;
+			string src_mgr = 2;
+			string dst_mgr = 3;
+		}
+
+		message RemoveAction {
+			string key = 1;
+			string mgr = 2;	
+		}
+
+		oneof action_type {
+			GetAction get_action = 1;
+			CopyFromAction copy_from_action = 2;
+			RemoveAction remove_action = 3;
+		}
+	}
+	
+	OperationType op_type = 1;
+	string key = 2;
+	repeated Action action = 3;
+}
+
+message InstallRuleRequest {
+
+}
+
+message RemoveRuleRequest {
+
+}

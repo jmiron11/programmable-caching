@@ -20,13 +20,12 @@ RocksDbStorageInterface::~RocksDbStorageInterface() {
 }
 
 StorageInterface::Status RocksDbStorageInterface::Get(const std::string& key,
-		std::string* value) {	
+    std::string* value) {
 	rocksdb::Status s = db_->Get(rocksdb::ReadOptions(), key, value);
-	if(!s.ok()) {
+	if (!s.ok()) {
 		LOG(ERROR) << s.ToString();
 		return StorageInterface::GENERIC_ERROR;
-	}
-	else {
+	} else {
 		return StorageInterface::OK;
 	}
 }
@@ -34,12 +33,23 @@ StorageInterface::Status RocksDbStorageInterface::Get(const std::string& key,
 StorageInterface::Status RocksDbStorageInterface::Put(const std::string& key,
     const std::string& value) {
 	rocksdb::Status s = db_->Put(rocksdb::WriteOptions(), key, value);
-	if(!s.ok()) {
+	if (!s.ok()) {
 		LOG(ERROR) << s.ToString();
 		return StorageInterface::GENERIC_ERROR;
-	}
-	else {
+	} else {
 		return StorageInterface::OK;
 	}
 }
+
+StorageInterface::Status RocksDbStorageInterface::Remove(
+  const std::string& key) {
+	rocksdb::Status s = db_->Delete(rocksdb::WriteOptions(), key);
+	if (!s.ok()) {
+		LOG(ERROR) << s.ToString();
+		return StorageInterface::GENERIC_ERROR;
+	} else {
+		return StorageInterface::OK;
+	}
+}
+
 

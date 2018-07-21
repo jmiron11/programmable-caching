@@ -3,7 +3,7 @@
 
 #include "proto/storage_service.grpc.pb.h"
 #include "storage_interface.h"
-#include "storage_manager_view.h"
+#include "storage_master_interface.h"
 
 #include <string>
 #include <thread>
@@ -13,22 +13,6 @@ using grpc::ServerContext;
 
 class StorageManager : public StorageManagerService::Service {
  public:
-	// Storage Manager's RPC interface with the storage master.
-	class StorageMasterInterface {
-	 public:
-		StorageMasterInterface(const std::string& hostname,
-		                       const std::string& port);
-
-		Status IntroduceToMaster(StorageType type, StorageName name,
-		                         const std::string& manager_port,
-		                         const std::string& manager_host,
-		                         std::string* assigned_name);
-		Status HeartbeatToMaster();
-
-	 private:
-		std::unique_ptr<MasterService::Stub> stub_;
-	};
-
 	StorageManager(const std::string& manager_hostname,
 	               const std::string& manager_port,
 	               const std::string& master_hostname,
@@ -40,34 +24,25 @@ class StorageManager : public StorageManagerService::Service {
 
 	// Storage manager RPCs.
 	Status CopyFrom(ServerContext* context, const CopyFromRequest* request,
-	                CopyFromReply* reply) override;
-
-	Status DisseminateStorageManagers(ServerContext* context,
-	                                  const DisseminateRequest* request,
-	                                  DisseminateReply* reply) override;
-	Status Put(ServerContext* context,
-	           const PutRequest* request,
-	           PutReply* reply) override;
+	                Empty* reply) override;
 
 	Status Get(ServerContext* context,
 	           const GetRequest* request,
 	           GetReply* reply) override;
 
+	Status Put(ServerContext* context,
+	           const PutRequest* request,
+	           Empty* reply) override;
+
 	Status Remove(ServerContext* context,
 	           const RemoveRequest* request,
-	           RemoveReply* reply) override;
+	           Empty* reply) override;
 
  protected:
 	// Storage interface for accesss to the managed storage medium.
 	std::unique_ptr<StorageInterface> storage_interface_;
 
  private:
-	// TODO(justinmiron): Initialize data structures to store mapping from
-	// hostname:port of other storage managers. If UNMANAGED data source,
-	// use information received with RPC from master to initialize wrapper as
-	// well. Protect data structures accessed by RPCs with concurrency control.
-	StorageManagerView manager_view;
-
 	// Responsible for initializing connection to storage medium and starting up
 	// server thread.
 	void ManageStorage(const std::string& hostname, const std::string& port);
@@ -88,9 +63,6 @@ class StorageManager : public StorageManagerService::Service {
 	// TODO(justinmiron): Fragment heartbeating from storage manager into node
 	// health monitor.
 	std::thread heartbeat_thread_;
-
-	void OffloadDisseminateStorageManagers(
-	  std::vector<std::pair<std::string, std::string>> name_uri);
 
 	std::string name_;
 	std::string manager_hostname_;

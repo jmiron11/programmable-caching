@@ -7,8 +7,6 @@ cc_library(
 	hdrs = ["storage_master.h"],
 	srcs = ["storage_master.cc"],
 	deps = [
-		":storage_manager_view",
-		":storage_file_view",
 		"//proto:storage_service_proto",
 		"//external:glog",
 	] + GRPC_COMPILE_DEPS
@@ -20,7 +18,7 @@ cc_library(
 	hdrs = ["storage_manager.h"],
 	deps = [
 		":storage_interface",
-		":storage_manager_view",
+		":storage_master_interface",
 		"//proto:storage_service_proto",
 		"//external:glog",
 	] + GRPC_COMPILE_DEPS
@@ -90,46 +88,6 @@ cc_test(
 	]
 )
 
-cc_library(
-	name = "s3_storage_interface",
-	hdrs = ["s3_storage_interface.h"],
-	srcs = ["s3_storage_interface.cc"],
-  copts = [
-  	"-laws-cpp-sdk-s3"
-  ],
-	deps = [
-		":storage_interface",
-	]
-)
-
-cc_test(
-	name = "s3_storage_interface_test",
-	srcs = ["s3_storage_interface_test.cc"],
-  copts = [
-  	"-Iexternal/gtest",
-  ],
-	deps = [
-		"//external:gtest",
-		":storage_interface",
-		":s3_storage_interface",
-	]
-)
-
-cc_library(
-	name = "storage_manager_view",
-	hdrs = ["storage_manager_view.h"],
-	srcs = ["storage_manager_view.cc"],
-	deps = [
-		"//proto:storage_service_proto",
-	] + GRPC_COMPILE_DEPS
-)
-
-cc_library(
-	name = "storage_file_view",
-	hdrs = ["storage_file_view.h"],
-	srcs = ["storage_file_view.cc"]
-)
-
 cc_binary(
 	name = "storage_master_binary",
 	srcs = ["storage_master_binary.cc"],
@@ -138,4 +96,32 @@ cc_binary(
 		"//external:gflags",
 		"//external:glog",
 	]
+)
+
+cc_library(
+	name = "storage_client",
+	srcs = ["storage_client.cc"],
+	hdrs = ["storage_client.h"],
+	deps = [
+		":storage_master_interface",
+		"//proto:storage_service_proto",
+	] + GRPC_COMPILE_DEPS
+)
+
+cc_binary(
+	name = "storage_client_binary",
+	srcs = ["storage_client_binary.cc"],
+	deps = [
+		":storage_client",
+		"//external:gflags",
+	]
+)
+
+cc_library(
+	name = "storage_master_interface",
+	srcs = ["storage_master_interface.cc"],
+	hdrs = ["storage_master_interface.h"],
+	deps = [
+		"//proto:storage_service_proto",
+	] + GRPC_COMPILE_DEPS
 )

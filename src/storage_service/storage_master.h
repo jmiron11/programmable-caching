@@ -6,8 +6,6 @@
 #include <thread>
 
 #include "proto/storage_service.grpc.pb.h"
-#include "storage_manager_view.h"
-#include "storage_file_view.h"
 
 using grpc::Server;
 using grpc::ServerBuilder;
@@ -16,31 +14,39 @@ using grpc::Status;
 
 class StorageMaster final : public MasterService::Service {
  public:
-  StorageMaster(const std::string& hostname, const std::string& port,
-                int master_disseminate_interval_);
+  // Thread safe data structure for mapping names to uri's
+  class PeerTracker {
+   public:
+    std::string GetUri(const std::string& name);
+    void AddPeer(const std::string& name, const std::string& uri);
+  private:
+    std::mutex tracker_mutex;
+    std::unordered_map<std::string, std::string> name_to_uri_;
+  };
 
-  std::string GenerateName(StorageName name, StorageType type,
-                           const std::string& hostname);
+  class StorageFileView {
+   public:
+  };
+
+
+  StorageMaster(const std::string& hostname, const std::string& port);
+
+  std::string GenerateName(const IntroduceRequest& reply);
 
   Status Introduce(ServerContext* context, const IntroduceRequest* request,
                    IntroduceReply* reply) override;
 
-  Status Heartbeat(ServerContext* context, const HeartbeatRequest* request,
-                   HeartbeatReply* reply) override;
+  Status Heartbeat(ServerContext* context, const Empty* request,
+                   Empty* reply) override;
 
   void OffloadIntroduce(std::string name, std::string peer);
-
-  void DisseminateThread(int master_disseminate_interval);
 
  private:
   // Maintains a mapping of the files to storage manager names.
   StorageFileView file_view_;
 
   // Maintains a view of the storage managers that are connected to the master.
-  StorageManagerView manager_view_;
-
-  // Thread that disseminates the view of the storage managers on a regular interview.
-  std::thread disseminate_thread_;
+  PeerTracker peer_tracker_;
 };
 
 #endif

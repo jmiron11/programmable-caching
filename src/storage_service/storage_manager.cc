@@ -17,36 +17,6 @@ using grpc::ServerContext;
 using grpc::Status;
 using std::string;
 
-StorageManager::StorageMasterInterface::StorageMasterInterface(
-  const std::string& hostname, const std::string& port) {
-	stub_ = MasterService::NewStub(grpc::CreateChannel(
-	                                 hostname + ":" + port,
-	                                 grpc::InsecureChannelCredentials()));
-}
-
-Status StorageManager::StorageMasterInterface::IntroduceToMaster(
-  StorageType type, StorageName name, const std::string& port,
-  const std::string& hostname, std::string* assigned_name) {
-	IntroduceRequest request;
-	request.set_storage_type(type);
-	request.set_storage_name(name);
-	request.set_rpc_port(port);
-	request.set_rpc_hostname(hostname);
-
-	IntroduceReply reply;
-	ClientContext context;
-	Status s = stub_->Introduce(&context, request, &reply);
-	*assigned_name = reply.name();
-	return s;
-}
-
-Status StorageManager::StorageMasterInterface::HeartbeatToMaster() {
-	HeartbeatRequest request;
-	HeartbeatReply reply;
-	ClientContext context;
-	return stub_->Heartbeat(&context, request, &reply);
-}
-
 StorageManager::StorageManager(const std::string& manager_hostname,
                                const std::string& manager_port,
                                const std::string& master_hostname,
@@ -92,10 +62,19 @@ void StorageManager::ManageStorage(const std::string& hostname,
 
 void StorageManager::IntroduceAndHeartbeat(int heartbeat_interval,
     std::string manager_port, std::string manager_host) {
-	Status s = master_interface_.IntroduceToMaster(
-	             storage_interface_->GetStorageType(),
-	             storage_interface_->GetStorageName(),
-	             manager_port, manager_host, &name_);
+
+	//Construct the introduce request and send it to the master
+	IntroduceRequest request;
+	IntroduceRequest::StorageManagerIntroduce* introduce =
+	  request.mutable_storage_manager();
+	introduce->set_storage_type(storage_interface_->GetStorageType());
+	introduce->set_storage_name(storage_interface_->GetStorageName());
+	introduce->set_rpc_port(manager_port);
+	introduce->set_rpc_hostname(manager_host);
+
+	IntroduceReply reply;
+	Status s = master_interface_.IntroduceToMaster(request, &reply);
+	name_ = reply.name();
 
 	// TODO(justinmiron): Implement better error handling on failure to introduce.
 	if (s.ok())
@@ -118,57 +97,58 @@ void StorageManager::IntroduceAndHeartbeat(int heartbeat_interval,
 	}
 }
 
-void StorageManager::OffloadDisseminateStorageManagers(
-  std::vector<std::pair<std::string, std::string>> name_uri) {
-
-	for(auto& mgr : name_uri) {
-		if (mgr.first != name_) {
-			manager_view.Add(mgr.first, mgr.second);
-		}
-	}
-}
-
-Status StorageManager::DisseminateStorageManagers(ServerContext* context,
-    const DisseminateRequest* request,
-    DisseminateReply* reply) {
-	LOG(INFO) << "Got dissemination!";
-	std::vector<std::pair<std::string, std::string>> name_uris;
-
-	for (auto& mgr : request->delta())	{
-		name_uris.push_back(std::pair<std::string, std::string>(mgr.name(), mgr.uri()));
-	}
-
-	std::thread t(&StorageManager::OffloadDisseminateStorageManagers, this,
-	              name_uris);
-	t.detach();
-
-	return Status::OK;
-}
-
 Status StorageManager::Get(ServerContext* context,
                            const GetRequest* request,
                            GetReply* reply) {
+	std::string* data = reply->mutable_value();
+	StorageInterface::Status s = storage_interface_->Get(request->key(), data);
+	if (s != StorageInterface::OK) {
+		LOG(ERROR) << "Error get'ing value associated with " << request->key() <<
+		           "from storage medium";
+	}
 	return Status::OK;
 }
 
 Status StorageManager::Put(ServerContext* context,
-                                const PutRequest* request,
-                                PutReply* reply) {
+                           const PutRequest* request,
+                           Empty* reply) {
 	// Puts file in database
 	// Send RPC to master informing of operation
+	StorageInterface::Status s = storage_interface_->Put(request->key(),
+	                             request->value());
+	if (s != StorageInterface::OK) {
+		LOG(ERROR) << "Error put'ing value associated with " << request->key() <<
+		           "from storage medium";
+	}
 	return Status::OK;
 }
 
 Status StorageManager::Remove(ServerContext* context,
-                                const RemoveRequest* request,
-                                RemoveReply* reply) {
+                              const RemoveRequest* request,
+                              Empty* reply) {
 	// Remove file from db
 	// Send RPC to master informing of operation
+	StorageInterface::Status s = storage_interface_->Remove(request->key());
+	if (s != StorageInterface::OK) {
+		LOG(ERROR) << "Error removing value associated with " << request->key() <<
+		           "from storage medium";
+	}
 	return Status::OK;
 }
 
 Status StorageManager::CopyFrom(ServerContext* context,
                                 const CopyFromRequest* request,
-                                CopyFromReply* reply) {
+                                Empty* reply) {
+	std::unique_ptr<StorageManagerService::Stub> stub
+	  = StorageManagerService::NewStub(grpc::CreateChannel(
+	                                     request->dst_uri(),
+	                                     grpc::InsecureChannelCredentials()));
+	GetRequest get_request;
+	get_request.set_key(request->key());
+	GetReply get_reply;
+	ClientContext ctx;
+
+	stub->Get(&ctx, get_request, &get_reply);
+	storage_interface_->Put(get_request.key(), get_reply.value());
 	return Status::OK;
 }

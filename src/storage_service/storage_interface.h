@@ -22,6 +22,9 @@ class StorageInterface {
  	// Put key,value pair into storage medium.
  	virtual Status Put(const std::string& key, const std::string& value) = 0;
 
+ 	// Remove the key from the storage medium
+ 	virtual Status Remove(const std::string& key) = 0;
+
  	// Return identification string of storage medium
  	virtual StorageType GetStorageType() = 0;
 
