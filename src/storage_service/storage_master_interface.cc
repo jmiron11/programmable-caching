@@ -15,15 +15,37 @@ StorageMasterInterface::StorageMasterInterface(
 	                                 grpc::InsecureChannelCredentials()));
 }
 
-Status StorageMasterInterface::IntroduceToMaster(
+Status StorageMasterInterface::Introduce(
   const IntroduceRequest& request, IntroduceReply* reply) {
 	ClientContext context;
 	Status s = stub_->Introduce(&context, request, reply);
 	return s;
 }
 
-Status StorageMasterInterface::HeartbeatToMaster() {
+Status StorageMasterInterface::Heartbeat() {
 	Empty request, reply;
 	ClientContext context;
 	return stub_->Heartbeat(&context, request, &reply);
+}
+
+Status StorageMasterInterface::StorageChange(const StorageChangeRequest&
+    request) {
+	Empty reply;
+	ClientContext context;
+	return stub_->StorageChange(&context, request, &reply);
+
+}
+
+Status StorageMasterInterface::InstallRule(const InstallRuleRequest& request) {
+	Empty reply;
+	ClientContext context;
+	return stub_->InstallRule(&context, request, &reply);
+
+}
+
+Status StorageMasterInterface::RemoveRule(const RemoveRuleRequest& request) {
+	Empty reply;
+	ClientContext context;
+	return stub_->RemoveRule(&context, request, &reply);
+
 }

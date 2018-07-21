@@ -3,7 +3,7 @@ syntax = "proto3";
 service MasterService {
 	rpc Introduce (IntroduceRequest) returns (IntroduceReply) {}
 	rpc Heartbeat (Empty) returns (Empty) {}
-	rpc SendDelta(Delta) returns (Empty) {}
+	rpc StorageChange(StorageChangeRequest) returns (Empty) {}
 	rpc InstallRule(InstallRuleRequest) returns (Empty) {}
 	rpc RemoveRule(RemoveRuleRequest) returns (Empty) {}
 } 
@@ -39,10 +39,15 @@ message Empty {}
 message IntroduceRequest {
 
 	message StorageManagerIntroduce {
+		message FileId {
+			string key = 1;
+		}	
+
 		StorageType storage_type = 1;
 		StorageName storage_name = 2;
 		string rpc_hostname = 3;
 		string rpc_port = 4;
+		repeated FileId file = 5;
 	}
 
 	message StorageClientIntroduce {
@@ -76,18 +81,6 @@ message GetReply {
 message PutRequest {
 	string key = 1;
 	string value = 2;
-}
-
-message PutReply {}
-
-message Delta {
-	enum Operation {
-		ADD = 0;
-		REMOVE = 1;
-	}
-
-	Operation op = 1;
-	string file = 2;
 }
 
 message RemoveRequest {
@@ -143,4 +136,18 @@ message InstallRuleRequest {
 message RemoveRuleRequest {
 	string client = 1;
 	Rule rule = 2;
+}
+
+message StorageChangeRequest {
+	message Delta{
+		enum OperationType {
+			PUT = 0;
+			REMOVE = 1;
+		}
+
+		OperationType op = 1;
+		string key = 2;
+	}
+
+	repeated Delta storage_change = 1;
 }

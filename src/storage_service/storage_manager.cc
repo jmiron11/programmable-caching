@@ -44,19 +44,11 @@ void StorageManager::ManageStorage(const std::string& hostname,
                                    const std::string& port) {
 	// Begin processing of storage management RPCs.
 	std::string server_address(hostname + ':' + port);
-
 	ServerBuilder builder;
-	// Listen on the given address without any authentication mechanism.
 	builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
-	// Register "service" as the instance through which we'll communicate with
-	// clients. In this case it corresponds to an *synchronous* service.
 	builder.RegisterService((StorageManager*)this);
-	// Finally assemble the server.
 	std::unique_ptr<Server> server(builder.BuildAndStart());
 	std::cout << "Server listening on " << server_address << std::endl;
-
-	// Wait for the server to shutdown. Note that some other thread must be
-	// responsible for shutting down the server for this call to ever return.
 	server->Wait();
 }
 
@@ -72,8 +64,16 @@ void StorageManager::IntroduceAndHeartbeat(int heartbeat_interval,
 	introduce->set_rpc_port(manager_port);
 	introduce->set_rpc_hostname(manager_host);
 
+	std::vector<std::string> keys;
+	storage_interface_->GetAllKeys(&keys);
+
+	for(const auto& key : keys) {
+		IntroduceRequest::StorageManagerIntroduce::FileId * f = introduce->add_file();
+		f->set_key(key);
+	}
+
 	IntroduceReply reply;
-	Status s = master_interface_.IntroduceToMaster(request, &reply);
+	Status s = master_interface_.Introduce(request, &reply);
 	name_ = reply.name();
 
 	// TODO(justinmiron): Implement better error handling on failure to introduce.
@@ -85,7 +85,7 @@ void StorageManager::IntroduceAndHeartbeat(int heartbeat_interval,
 	auto curr_t = std::chrono::system_clock::now();
 
 	while (1) {
-		Status s = master_interface_.HeartbeatToMaster();
+		Status s = master_interface_.Heartbeat();
 		if (s.ok())
 			LOG(INFO) << "To the beat of a drum";
 		else

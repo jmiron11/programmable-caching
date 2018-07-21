@@ -19,7 +19,7 @@ class StorageMaster final : public MasterService::Service {
    public:
     std::string GetUri(const std::string& name);
     void AddPeer(const std::string& name, const std::string& uri);
-  private:
+   private:
     std::mutex tracker_mutex;
     std::unordered_map<std::string, std::string> name_to_uri_;
   };
@@ -28,8 +28,11 @@ class StorageMaster final : public MasterService::Service {
    public:
   };
 
-
   StorageMaster(const std::string& hostname, const std::string& port);
+
+  void Start(); // Start the storage master service
+  void Stop(); // Stops the storage master service
+  void MasterThread();
 
   std::string GenerateName(const IntroduceRequest& reply);
 
@@ -38,6 +41,10 @@ class StorageMaster final : public MasterService::Service {
 
   Status Heartbeat(ServerContext* context, const Empty* request,
                    Empty* reply) override;
+
+  Status StorageChange(ServerContext* context,
+                       const StorageChangeRequest* request,
+                       Empty* reply);
 
   Status InstallRule(ServerContext* context,
                      const InstallRuleRequest* request,
@@ -57,6 +64,13 @@ class StorageMaster final : public MasterService::Service {
 
   // Maintains a view of the storage managers that are connected to the master.
   PeerTracker peer_tracker_;
+
+
+  std::string master_hostname_;
+  std::string master_port_;
+
+  std::thread master_thread_;
+  std::unique_ptr<Server> server_;
 };
 
 #endif

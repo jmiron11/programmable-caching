@@ -31,6 +31,7 @@ cc_library(
 	deps = [
 		":storage_manager",
 		":rocksdb_storage_interface",
+		"//proto:storage_service_proto",
 		"//external:glog",
 	] + GRPC_COMPILE_DEPS
 )
@@ -72,7 +73,9 @@ cc_test(
   ],
 	deps = [
 		"//external:gtest",
-		":rocksdb_storage_manager"
+		":rocksdb_storage_manager",
+		":storage_master",
+		"//proto:storage_service_proto"
 	]
 )
 
@@ -124,4 +127,18 @@ cc_library(
 	deps = [
 		"//proto:storage_service_proto",
 	] + GRPC_COMPILE_DEPS
+)
+
+
+cc_test(
+	name = "storage_master_test",
+	srcs = ["storage_master_test.cc"],
+  copts = [
+  	"-Iexternal/gtest",
+  ],
+	deps = [
+		"//external:gtest",
+		":storage_master",
+		"//proto:storage_service_proto"
+	]
 )

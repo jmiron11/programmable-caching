@@ -14,9 +14,16 @@ class StorageMasterInterface {
 	StorageMasterInterface(const std::string& hostname,
 	                       const std::string& port);
 
-	Status IntroduceToMaster(const IntroduceRequest& request,
+	Status Introduce(const IntroduceRequest& request,
 	                         IntroduceReply* reply);
-	Status HeartbeatToMaster();
+	
+	Status Heartbeat();
+
+	Status StorageChange(const StorageChangeRequest& request);
+
+	Status InstallRule(const InstallRuleRequest& request);
+
+	Status RemoveRule(const RemoveRuleRequest& request);
 
  private:
 	std::unique_ptr<MasterService::Stub> stub_;

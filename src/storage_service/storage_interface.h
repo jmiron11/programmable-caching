@@ -25,6 +25,9 @@ class StorageInterface {
  	// Remove the key from the storage medium
  	virtual Status Remove(const std::string& key) = 0;
 
+ 	// Get all keys in the storage medium
+ 	virtual Status GetAllKeys(std::vector<std::string>* keys) = 0;
+
  	// Return identification string of storage medium
  	virtual StorageType GetStorageType() = 0;
 

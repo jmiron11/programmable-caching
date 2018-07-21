@@ -1,4 +1,3 @@
-
 #include "storage_interface.h"
 #include "rocksdb_storage_interface.h"
 #include "rocksdb/db.h"
@@ -53,3 +52,17 @@ StorageInterface::Status RocksDbStorageInterface::Remove(
 }
 
 
+StorageInterface::Status RocksDbStorageInterface::GetAllKeys(
+  std::vector<std::string>* keys) {
+	rocksdb::Iterator* it = db_->NewIterator(rocksdb::ReadOptions());
+	for (it->SeekToFirst(); it->Valid(); it->Next()) {
+		keys->push_back(it->key().ToString());
+	}
+	bool is_ok = it->status().ok();
+	delete it;
+	if(is_ok) {
+		return StorageInterface::OK;
+	} else {
+		return StorageInterface::GENERIC_ERROR;
+	}
+}

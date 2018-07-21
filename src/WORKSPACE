@@ -4,6 +4,12 @@ git_repository(
     commit = "35f4ff08da86cdfa24cb1ce274cec6bfc1d43dc2",
 )
 
+git_repository(
+    name = "com_github_grpc_grpc",
+    remote = "https://github.com/grpc/grpc.git", 
+    commit = "2cfc216cfd58dc247249da87dbefa8bb949c8b9c"
+)
+
 load("@org_pubref_rules_protobuf//cpp:rules.bzl", "cpp_proto_repositories")
 cpp_proto_repositories()
 

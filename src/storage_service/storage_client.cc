@@ -34,7 +34,6 @@ StorageClient::StorageClient(const std::string& manager_hostname,
 	server->Wait();
 }
 
-
 Status StorageClient::Get(ServerContext* context,
                           const GetRequest* request,
                           GetReply* reply) {

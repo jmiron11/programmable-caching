@@ -1,11 +1,10 @@
+#include "proto/storage_service.grpc.pb.h"
+#include "storage_master.h"
 
 #include <grpcpp/grpcpp.h>
 #include <glog/logging.h>
 #include <thread>
 #include <chrono>
-
-#include "proto/storage_service.grpc.pb.h"
-#include "storage_master.h"
 
 using grpc::Server;
 using grpc::ServerBuilder;
@@ -18,21 +17,40 @@ std::string StorageMaster::PeerTracker::GetUri(const std::string& name) {
   return name_to_uri_[name];
 }
 
-void StorageMaster::PeerTracker::AddPeer(const std::string& name, const std::string& uri) {
+void StorageMaster::PeerTracker::AddPeer(const std::string& name,
+    const std::string& uri) {
   std::lock_guard<std::mutex> lock(tracker_mutex);
   name_to_uri_[name] = uri;
 }
 
 StorageMaster::StorageMaster(const std::string& hostname,
-                             const std::string& port) {
+                             const std::string& port):
+  master_hostname_(hostname), master_port_(port) {}
 
-  std::string server_address(hostname + ':' + port);
+void StorageMaster::Start() {
+  std::string server_address(master_hostname_ + ':' + master_port_);
   ServerBuilder builder;
   builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
   builder.RegisterService(this);
-  std::unique_ptr<Server> server(builder.BuildAndStart());
-  std::cout << "Server listening on " << server_address << std::endl;
-  server->Wait();
+  server_ = builder.BuildAndStart();
+  LOG(INFO) << "Storage master listening on " << server_address;
+}
+
+void StorageMaster::MasterThread() {
+  std::string server_address(master_hostname_ + ':' + master_port_);
+  ServerBuilder builder;
+  builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
+  builder.RegisterService(this);
+  server_ = builder.BuildAndStart();
+  LOG(INFO) << "Storage master listening on " << server_address;
+}
+
+void StorageMaster::Stop() {
+  LOG(INFO) << "tried";
+  server_->Shutdown();
+  LOG(INFO) << "Shutdown";
+  // master_thread_.join();
+  LOG(INFO) << "Stopped";
 }
 
 std::string StorageMaster::GenerateName(const IntroduceRequest& request) {
@@ -62,7 +80,8 @@ Status StorageMaster::Introduce(ServerContext * context,
   LOG(INFO) << "Received introduction from " << name;
   switch (request->introduce_case()) {
   case IntroduceRequest::kStorageManager: {
-    IntroduceRequest::StorageManagerIntroduce introduce = request->storage_manager();
+    IntroduceRequest::StorageManagerIntroduce introduce =
+      request->storage_manager();
     std::string uri = introduce.rpc_hostname() + ":" + introduce.rpc_port();
     peer_tracker_.AddPeer(name, uri);
     break;
@@ -84,7 +103,7 @@ Status StorageMaster::Introduce(ServerContext * context,
 Status StorageMaster::Heartbeat(ServerContext * context,
                                 const Empty * request,
                                 Empty * reply) {
-  LOG(INFO) << "heartbeat received from " << context->peer();
+  LOG(INFO) << "Heartbeat received from " << context->peer();
   return Status::OK;
 }
 
@@ -107,7 +126,7 @@ Status StorageMaster::InstallRule(ServerContext* context,
 
   // send rule request to client
 
-  
+
   return Status::OK;
 }
 
@@ -115,5 +134,11 @@ Status StorageMaster::RemoveRule(ServerContext* context,
                                  const RemoveRuleRequest* request,
                                  Empty* reply) {
   // Same flow as Install Rule
+  return Status::OK;
+}
+
+Status StorageMaster::StorageChange(ServerContext* context,
+                                const StorageChangeRequest* request,
+                                Empty* reply) {
   return Status::OK;
 }
