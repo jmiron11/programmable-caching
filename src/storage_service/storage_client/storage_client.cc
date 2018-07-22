@@ -62,11 +62,14 @@ Status StorageClient::Remove(ServerContext* context,
 Status StorageClient::InstallRule(ServerContext* context,
                                   const InstallRuleRequest* request,
                                   Empty* reply) {
+
+	rule_db_.AddRule(request->rule());	
 	return Status::OK;
 }
 
 Status StorageClient::RemoveRule(ServerContext* context,
                                  const RemoveRuleRequest* request,
                                  Empty* reply) {
+	rule_db_.RemoveRule(request->rule());
 	return Status::OK;
 }

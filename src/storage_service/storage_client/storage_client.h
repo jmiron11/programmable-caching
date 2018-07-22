@@ -1,11 +1,12 @@
 #ifndef STORAGE_CLIENT_H_
 #define STORAGE_CLIENT_H_
 
-#include <grpcpp/grpcpp.h>
-#include <string>
-
 #include "proto/storage_service.grpc.pb.h"
 #include "storage_service/rpc_interfaces/storage_master_interface.h"
+#include "rule_db.h"
+
+#include <grpcpp/grpcpp.h>
+#include <string>
 
 using grpc::Status;
 using grpc::ServerContext;
@@ -42,6 +43,8 @@ class StorageClient final : public StorageClientService::Service {
 	                  Empty* reply) override;
 
  private:
+ 	RuleDb rule_db_;
+
  	const std::string client_hostname_;
  	const std::string client_port_;
  	StorageMasterInterface master_interface_;
@@ -50,4 +53,4 @@ class StorageClient final : public StorageClientService::Service {
 
 };
 
-#endif
+#endif	

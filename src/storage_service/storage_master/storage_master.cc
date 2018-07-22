@@ -237,10 +237,7 @@ Status StorageMaster::RemoveRule(ServerContext* context,
 
   // Create stub to client
   StorageClientInterface client(p.rpc_uri);
-
-  // Update rule request to fill in actions with mgr rpc uri's
-  FillInRule(new_request.mutable_rule());
-
+  
   // send rule request to client
   return client.RemoveRule(new_request);
 }
