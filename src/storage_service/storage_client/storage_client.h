@@ -43,14 +43,24 @@ class StorageClient final : public StorageClientService::Service {
 	                  Empty* reply) override;
 
  private:
- 	RuleDb rule_db_;
 
- 	const std::string client_hostname_;
- 	const std::string client_port_;
- 	StorageMasterInterface master_interface_;
+	void ExecuteGetAction(const Rule::Action::GetAction& action, GetReply* reply);
 
- 	std::unique_ptr<Server> server_;
+	void ExecuteCopyAction(const Rule::Action::CopyFromAction& action);
+
+	void ExecutePutAction(const Rule::Action::PutAction& action,
+	                      const PutRequest* request);
+
+	void ExecuteRemoveAction(const Rule::Action::RemoveAction& action);
+
+	RuleDb rule_db_;
+
+	const std::string client_hostname_;
+	const std::string client_port_;
+	StorageMasterInterface master_interface_;
+
+	std::unique_ptr<Server> server_;
 
 };
 
-#endif	
+#endif
