@@ -10,11 +10,13 @@ DEFINE_string(db_path, "/tmp/rocksdb", "path of rocksdb database");
 int main(int argc, char** argv) {
 	gflags::ParseCommandLineFlags(&argc, &argv, true);
 
-	RocksDbStorageManager storage_manager(FLAGS_manager_hostname,
-	                                      FLAGS_manager_port,
-	                                      FLAGS_master_hostname, 
-	                                      FLAGS_master_port,
-	                                      FLAGS_db_path);
+	std::unique_ptr<StorageInterface> storage_interface;
+	storage_interface.reset(new RocksDbStorageInterface(FLAGS_db_path));
+	StorageManager storage_manager(FLAGS_manager_hostname,
+	                               FLAGS_manager_port,
+	                               FLAGS_master_hostname,
+	                               FLAGS_master_port,
+	                               storage_interface);
 	storage_manager.Start();
 
 	gflags::ShutDownCommandLineFlags();

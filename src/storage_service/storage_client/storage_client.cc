@@ -1,5 +1,6 @@
 #include "storage_client.h"
 #include "proto/storage_service.grpc.pb.h"
+#include "storage_service/rpc_interfaces/storage_manager_interface.h"
 
 #include <grpcpp/grpcpp.h>
 #include <glog/logging.h>
@@ -43,22 +44,35 @@ void StorageClient::Stop() {
 
 void StorageClient::ExecuteGetAction(const Rule::Action::GetAction& action,
                                      GetReply* reply) {
-	
+	GetRequest req;
+	req.set_key(action.key());
+
+	StorageManagerInterface manager_interface(action.mgr().uri());
+	manager_interface.Get(req, reply);	
 }
 
 void StorageClient::ExecuteCopyAction(const Rule::Action::CopyFromAction&
                                       action) {
+	CopyFromRequest req;
+	req.set_key(action.key());
+	req.set_dst_uri(action.dst_mgr().uri());
 
+	StorageManagerInterface manager_interface(action.src_mgr().uri());
+	manager_interface.CopyFrom(req);
 }
 
 void StorageClient::ExecutePutAction(const Rule::Action::PutAction& action,
                                      const PutRequest* request ) {
-
+	StorageManagerInterface manager_interface(action.mgr().uri());
+	manager_interface.Put(*request);
 }
 
 void StorageClient::ExecuteRemoveAction(const Rule::Action::RemoveAction&
                                         action) {
-
+	RemoveRequest req;
+	req.set_key(action.key());	
+	StorageManagerInterface manager_interface(action.mgr().uri());
+	manager_interface.Remove(req);
 }
 
 Status StorageClient::Get(ServerContext* context,

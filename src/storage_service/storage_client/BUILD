@@ -8,6 +8,7 @@ cc_library(
 	deps = [
 		":rule_db",
 		"//external:glog",
+		"//storage_service/rpc_interfaces:storage_manager_interface",
 		"//storage_service/rpc_interfaces:storage_master_interface",
 		"//proto:storage_service_proto",
 	] + GRPC_COMPILE_DEPS

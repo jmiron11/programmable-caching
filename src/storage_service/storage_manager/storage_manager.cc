@@ -21,39 +21,33 @@ StorageManager::StorageManager(const std::string& manager_hostname,
                                const std::string& manager_port,
                                const std::string& master_hostname,
                                const std::string& master_port,
-                               int master_heartbeat_interval_seconds)
+                               std::unique_ptr<StorageInterface> storage_interface)
 	: master_interface_(master_hostname, master_port),
 	  manager_hostname_(manager_hostname),
 	  manager_port_(manager_port),
 	  master_hostname_(master_hostname),
 	  master_port_(master_port),
-	  master_heartbeat_interval_seconds_(master_heartbeat_interval_seconds) { }
+	  storage_interface_(std::move(storage_interface)) { }
 
 void StorageManager::Start() {
-	heartbeat_thread_ = std::thread(&StorageManager::IntroduceAndHeartbeat, this,
-	                                master_heartbeat_interval_seconds_, manager_port_,
-	                                manager_hostname_);
-	ManageStorage(manager_hostname_, manager_port_);
-}
-
-StorageManager::~StorageManager() {
-	heartbeat_thread_.join();
-}
-
-void StorageManager::ManageStorage(const std::string& hostname,
-                                   const std::string& port) {
+	LOG(INFO) << "Introducing self to master";
+	Introduce(manager_port_, manager_hostname_);
+	LOG(INFO) << "Introduced to master";
 	// Begin processing of storage management RPCs.
-	std::string server_address(hostname + ':' + port);
+	std::string server_address(manager_hostname_ + ':' + manager_port_);
 	ServerBuilder builder;
 	builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
 	builder.RegisterService((StorageManager*)this);
-	std::unique_ptr<Server> server(builder.BuildAndStart());
-	std::cout << "Server listening on " << server_address << std::endl;
-	server->Wait();
+	server_ = builder.BuildAndStart();
+	std::cout << "Storage Manager listening on " << server_address << std::endl;
 }
 
-void StorageManager::IntroduceAndHeartbeat(int heartbeat_interval,
-    std::string manager_port, std::string manager_host) {
+void StorageManager::Stop() {
+	server_->Shutdown();
+}
+
+void StorageManager::Introduce(std::string manager_port,
+                               std::string manager_host) {
 
 	//Construct the introduce request and send it to the master
 	IntroduceRequest request;
@@ -67,7 +61,7 @@ void StorageManager::IntroduceAndHeartbeat(int heartbeat_interval,
 	std::vector<std::string> keys;
 	storage_interface_->GetAllKeys(&keys);
 
-	for(const auto& key : keys) {
+	for (const auto& key : keys) {
 		IntroduceRequest::StorageManagerIntroduce::FileId * f = introduce->add_file();
 		f->set_key(key);
 	}
@@ -75,26 +69,6 @@ void StorageManager::IntroduceAndHeartbeat(int heartbeat_interval,
 	IntroduceReply reply;
 	Status s = master_interface_.Introduce(request, &reply);
 	name_ = reply.name();
-
-	// TODO(justinmiron): Implement better error handling on failure to introduce.
-	if (s.ok())
-		LOG(INFO) << "Successfully introduced to master";
-	else
-		LOG(WARNING) << "Error introducing to master";
-
-	auto curr_t = std::chrono::system_clock::now();
-
-	while (1) {
-		Status s = master_interface_.Heartbeat();
-		if (s.ok())
-			LOG(INFO) << "To the beat of a drum";
-		else
-			LOG(WARNING) << "Error heartbeating, this is how it ends.";
-
-		auto next_t = curr_t + std::chrono::seconds{heartbeat_interval};
-		std::this_thread::sleep_until(next_t);
-		curr_t = next_t;
-	}
 }
 
 Status StorageManager::Get(ServerContext* context,
@@ -114,6 +88,7 @@ Status StorageManager::Put(ServerContext* context,
                            Empty* reply) {
 	// Puts file in database
 	// Send RPC to master informing of operation
+	LOG(INFO) << "Recieved Put req";
 	StorageInterface::Status s = storage_interface_->Put(request->key(),
 	                             request->value());
 	if (s != StorageInterface::OK) {

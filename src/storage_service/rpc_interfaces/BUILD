@@ -47,3 +47,28 @@ cc_test(
 		"//external:gtest"
 	]
 )
+
+cc_library(
+	name = "storage_manager_interface",
+	srcs = ["storage_manager_interface.cc"],
+	hdrs = ["storage_manager_interface.h"],
+	deps = [
+		"//proto:storage_service_proto",
+	] + GRPC_COMPILE_DEPS
+)
+
+cc_test(
+	name = "storage_manager_interface_test",
+	srcs = ["storage_manager_interface_test.cc"],
+  copts = [
+  	"-Iexternal/gtest"
+  ],
+	deps = [
+		":storage_manager_interface",
+		"//storage_service/storage_master:storage_master",
+		"//storage_service/storage_interfaces:rocksdb_storage_interface",
+		"//storage_service/storage_manager:storage_manager",
+		"//proto:storage_service_proto",
+		"//external:gtest"
+	]
+)
