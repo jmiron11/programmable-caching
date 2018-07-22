@@ -7,8 +7,14 @@ using grpc::Channel;
 using grpc::ClientContext;
 using grpc::Status;
 
+StorageClientInterface::StorageClientInterface(const std::string& uri) {
+	stub_ = StorageClientService::NewStub(grpc::CreateChannel(
+	                                        uri,
+	                                        grpc::InsecureChannelCredentials()));
+}
+
 StorageClientInterface::StorageClientInterface(const std::string& hostname,
-    const std::string& port) {
+																						   const std::string& port) {
 	stub_ = StorageClientService::NewStub(grpc::CreateChannel(
 	                                        hostname + ":" + port,
 	                                        grpc::InsecureChannelCredentials()));

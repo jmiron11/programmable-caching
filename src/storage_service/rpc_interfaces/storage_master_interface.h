@@ -11,8 +11,8 @@ using grpc::Status;
 
 class StorageMasterInterface {
  public:
-	StorageMasterInterface(const std::string& hostname,
-	                       const std::string& port);
+	StorageMasterInterface(const std::string& uri);
+	StorageMasterInterface(const std::string& hostname, const std::string& port);
 
 	Status Introduce(const IntroduceRequest& request,
 	                         IntroduceReply* reply);

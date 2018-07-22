@@ -10,8 +10,8 @@ using grpc::Status;
 
 class StorageClientInterface {
  public:
-	StorageClientInterface(const std::string& hostname,
-	                       const std::string& port);
+	StorageClientInterface(const std::string& uri);
+	StorageClientInterface(const std::string& hostname, const std::string& port);
 
 	Status Put(const PutRequest& request);
 	

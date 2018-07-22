@@ -9,11 +9,13 @@
 #include <thread>
 #include <chrono>
 
+// TODO(justinmiron): Replace client with fake and remove master.
 class StorageClientInterfaceTest : public ::testing::Test {
  public:
 	StorageClientInterfaceTest():
-		master_(master_hostname, master_port), client_(client_hostname, client_port,
-		    master_hostname, master_port) { }
+		master_(master_hostname, master_port),
+		client_(client_hostname, client_port,
+		        master_hostname, master_port) { }
 
 	void SetUp() override {
 		master_.Start();
@@ -21,8 +23,8 @@ class StorageClientInterfaceTest : public ::testing::Test {
 		client_.Start();
 		std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
-		client_interface_.reset(new StorageClientInterface(client_hostname,
-		                       client_port));
+		client_interface_.reset(new StorageClientInterface(client_hostname, 
+		                        client_port));
 
 	}
 
@@ -33,9 +35,9 @@ class StorageClientInterfaceTest : public ::testing::Test {
 	}
 
 	const std::string master_hostname = "localhost";
-	const std::string master_port = "50051";
+	const std::string master_port = "50053";
 	const std::string client_hostname = "localhost";
-	const std::string client_port = "50052";
+	const std::string client_port = "50055";
 	StorageMaster master_;
 	StorageClient client_;
 	std::unique_ptr<StorageClientInterface> client_interface_;

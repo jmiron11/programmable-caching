@@ -172,11 +172,12 @@ Status StorageMaster::InstallRule(ServerContext* context,
   InstallRuleRequest new_request = *request;
 
   // Get uri of client
-  StorageMaster::PeerTracker::Peer p = peer_tracker_.GetPeerFromName(
-                                         request->client());
-  std::string client_uri = p.rpc_uri;
+  // StorageMaster::PeerTracker::Peer p = peer_tracker_.GetPeerFromName(
+  //                                        request->client());
+  // std::string client_uri = p.rpc_uri;
 
   // Create stub to client
+  // StorageClientInterface client()
 
   // Update rule request to fill in actions with mgr rpc uri's
   FillInRule(new_request.mutable_rule());

@@ -9,6 +9,13 @@ using grpc::Status;
 
 
 StorageMasterInterface::StorageMasterInterface(
+  const std::string& uri) {
+	stub_ = MasterService::NewStub(grpc::CreateChannel(
+	                                 uri,
+	                                 grpc::InsecureChannelCredentials()));
+}
+
+StorageMasterInterface::StorageMasterInterface(
   const std::string& hostname, const std::string& port) {
 	stub_ = MasterService::NewStub(grpc::CreateChannel(
 	                                 hostname + ":" + port,
@@ -40,7 +47,6 @@ Status StorageMasterInterface::InstallRule(const InstallRuleRequest& request) {
 	Empty reply;
 	ClientContext context;
 	return stub_->InstallRule(&context, request, &reply);
-
 }
 
 Status StorageMasterInterface::RemoveRule(const RemoveRuleRequest& request) {
