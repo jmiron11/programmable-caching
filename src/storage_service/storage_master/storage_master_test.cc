@@ -1,6 +1,6 @@
-#include "storage_master.h"
-#include "storage_master_interface.h"
 #include "gtest/gtest.h"
+#include "storage_master.h"
+#include "storage_service/rpc_interfaces/storage_master_interface.h"
 
 #include <grpcpp/grpcpp.h>
 #include <thread>
@@ -112,4 +112,29 @@ TEST_F(StorageMasterTest, UpdateToDateGlobalView) {
 		LOG(INFO) << key;
 		EXPECT_NE(new_set_of_files.find(key), new_set_of_files.end());
 	}
+}
+
+TEST_F(StorageMasterTest, FillInRulePopulatesMgrRpcUri){
+
+	// Introduce manager
+	IntroduceRequest request;
+	IntroduceRequest::StorageManagerIntroduce* introduce =
+	  request.mutable_storage_manager();
+	introduce->set_storage_type(StorageType::MANAGED);
+	introduce->set_storage_name(StorageName::EPHEMERAL);
+	introduce->set_rpc_hostname("hostname");
+	introduce->set_rpc_port("1234");
+
+	IntroduceReply reply;
+	Status s = master_interface_->Introduce(request, &reply);
+	EXPECT_TRUE(s.ok());
+
+
+	std::string mgr_uri = "hostname:1234";
+
+	// Retrieve the manager name for later delta
+	std::string mgr_name = reply.name();
+	
+	
+
 }

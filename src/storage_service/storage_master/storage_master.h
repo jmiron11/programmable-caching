@@ -1,11 +1,11 @@
 #ifndef STORAGE_MASTER_H_
 #define STORAGE_MASTER_H_
 
+#include "proto/storage_service.grpc.pb.h"
+
 #include <grpcpp/grpcpp.h>
 #include <glog/logging.h>
 #include <thread>
-
-#include "proto/storage_service.grpc.pb.h"
 
 using grpc::Server;
 using grpc::ServerBuilder;

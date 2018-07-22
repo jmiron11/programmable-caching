@@ -1,6 +1,6 @@
-#include "storage_master.h"
-#include "storage_master_interface.h"
 #include "gtest/gtest.h"
+#include "storage_master_interface.h"
+#include "storage_service/storage_master/storage_master.h"
 
 #include <grpcpp/grpcpp.h>
 #include <thread>

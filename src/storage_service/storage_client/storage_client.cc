@@ -23,7 +23,7 @@ StorageClient::StorageClient(const std::string& manager_hostname,
 	introduce->set_rpc_hostname(manager_hostname);
 
 	IntroduceReply reply;
-	Status s = master_interface_.IntroduceToMaster(request, &reply);
+	Status s = master_interface_.Introduce(request, &reply);
 
 	std::string server_address(manager_hostname + ':' + manager_port);
 	ServerBuilder builder;

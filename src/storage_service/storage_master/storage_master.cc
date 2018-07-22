@@ -178,7 +178,7 @@ Status StorageMaster::InstallRule(ServerContext* context,
 
   // Create stub to client
 
-  // Update rule request to fill in actions with mgr details
+  // Update rule request to fill in actions with mgr rpc uri's
   FillInRule(new_request.mutable_rule());
 
   // send rule request to client

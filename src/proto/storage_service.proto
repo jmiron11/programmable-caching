@@ -95,12 +95,6 @@ message RemoveRequest {
 }
 
 message Rule {
-	enum OperationType {
-		GET = 0;			// 
-		PUT = 1;			// puts in dst_mgr
-		REMOVE = 2;		// removes from src_mgr
-	}	
-
 	message Manager {
 		string name = 1; // populated by scheduler
 		string uri = 2; // populated by storage master
@@ -156,6 +150,8 @@ message StorageChangeRequest {
 }
 
 message GetViewReply {
+	// TODO(justinmiron): Extend to support view of clients so scheduler
+	// can create rules
 	message ManagerView {
 		string name = 1;
 		repeated string key = 2; // Keys at the manager

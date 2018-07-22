@@ -1,5 +1,5 @@
 #include "rocksdb_storage_manager.h"
-#include "storage_master.h"
+#include "storage_service/storage_master/storage_master.h"
 #include "gtest/gtest.h"
 
 class RocksDbStorageManagerTest : public ::testing::Test {

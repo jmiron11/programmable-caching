@@ -2,7 +2,7 @@
 #define ROCKSDB_STORAGE_MANAGER_H_
 
 #include "storage_manager.h"
-#include "rocksdb_storage_interface.h"
+#include "storage_service/storage_interfaces/rocksdb_storage_interface.h"
 
 // Wrapper around storage manager to initialize the correct storage
 // interface.

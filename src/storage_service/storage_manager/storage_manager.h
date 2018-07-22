@@ -2,8 +2,8 @@
 #define STORAGE_MANAGER_H_
 
 #include "proto/storage_service.grpc.pb.h"
-#include "storage_interface.h"
-#include "storage_master_interface.h"
+#include "storage_service/storage_interfaces/storage_interface.h"
+#include "storage_service/rpc_interfaces/storage_master_interface.h"
 
 #include <string>
 #include <thread>

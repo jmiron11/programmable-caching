@@ -1,5 +1,5 @@
 #include "rocksdb_storage_manager.h"
-#include "rocksdb_storage_interface.h"
+#include "storage_service/storage_interfaces/rocksdb_storage_interface.h"
 
 #include <memory>
 #include <glog/logging.h>
