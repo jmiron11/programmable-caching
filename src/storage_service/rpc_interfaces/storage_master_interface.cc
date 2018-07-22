@@ -25,8 +25,7 @@ StorageMasterInterface::StorageMasterInterface(
 Status StorageMasterInterface::Introduce(
   const IntroduceRequest& request, IntroduceReply* reply) {
 	ClientContext context;
-	Status s = stub_->Introduce(&context, request, reply);
-	return s;
+	return stub_->Introduce(&context, request, reply);
 }
 
 Status StorageMasterInterface::Heartbeat() {

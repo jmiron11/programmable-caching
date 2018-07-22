@@ -52,7 +52,7 @@ TEST_F(StorageMasterTest, UpdateToDateGlobalView) {
 	introduce->set_rpc_hostname("hostname");
 	introduce->set_rpc_port("1234");
 
-	std::set<std::string> manager_files = {"f1", "f2"}; 
+	std::set<std::string> manager_files = {"f1", "f2"};
 	for (const auto& f : manager_files) {
 		IntroduceRequest::StorageManagerIntroduce::FileId* id = introduce->add_file();
 		id->set_key(f);
@@ -66,25 +66,25 @@ TEST_F(StorageMasterTest, UpdateToDateGlobalView) {
 	std::string mgr_name = reply.name();
 
 
-	// Check that the view is equal to the initial set of manager files in 
+	// Check that the view is equal to the initial set of manager files in
 	// introduce.
 	GetViewReply view_reply;
 	master_interface_->GetView(&view_reply);
-	EXPECT_EQ(view_reply.view_size(), 1);	
+	EXPECT_EQ(view_reply.view_size(), 1);
 
 	const GetViewReply::ManagerView& mgr_view = view_reply.view(0);
 	EXPECT_EQ(mgr_view.name(), mgr_name);
 	EXPECT_EQ(manager_files.size(), mgr_view.key_size());
 
 	// Each manager file actually exists in the view.
-	for(const auto& key : mgr_view.key()){
+	for (const auto& key : mgr_view.key()) {
 		EXPECT_NE(manager_files.find(key), manager_files.end());
 	}
 
 	// Remove f2 from mgr and add f3.
 	StorageChangeRequest change_request;
 	StorageChangeRequest::Delta* d;
-	d = change_request.add_storage_change(); 
+	d = change_request.add_storage_change();
 
 	d->set_op(OperationType::PUT);
 	d->set_key("f3");
@@ -101,14 +101,14 @@ TEST_F(StorageMasterTest, UpdateToDateGlobalView) {
 	std::set<std::string> new_set_of_files = {"f1", "f3"};
 	GetViewReply new_view_reply;
 	master_interface_->GetView(&new_view_reply);
-	EXPECT_EQ(new_view_reply.view_size(), 1);	
+	EXPECT_EQ(new_view_reply.view_size(), 1);
 
 	const GetViewReply::ManagerView& new_mgr_view = new_view_reply.view(0);
 	EXPECT_EQ(new_mgr_view.name(), mgr_name);
 	EXPECT_EQ(new_set_of_files.size(), new_mgr_view.key_size());
 
 	// Each manager file actually exists in the view.
-	for(const auto& key : new_mgr_view.key()){
+	for (const auto& key : new_mgr_view.key()) {
 		EXPECT_NE(new_set_of_files.find(key), new_set_of_files.end());
 	}
 }
@@ -125,7 +125,7 @@ class StorageMasterWithClientTest : public ::testing::Test {
 		master_.Start();
 		std::this_thread::sleep_for(std::chrono::milliseconds(50));
 		client_.Start();
-		master_interface_.reset(new StorageMasterInterface(master_hostname, 
+		master_interface_.reset(new StorageMasterInterface(master_hostname,
 		                        master_port));
 	}
 
@@ -145,7 +145,9 @@ class StorageMasterWithClientTest : public ::testing::Test {
 };
 
 
-TEST_F(StorageMasterWithClientTest, FillInRulePopulatesMgrRpcUri){
+// TODO(justinmiron): Currently doesn't test anything new, move to an e2e
+// test once infrastructure is up.
+TEST_F(StorageMasterWithClientTest, FillInRulePopulatesMgrRpcUri) {
 
 	// Introduce manager
 	IntroduceRequest request;
@@ -165,20 +167,25 @@ TEST_F(StorageMasterWithClientTest, FillInRulePopulatesMgrRpcUri){
 	// Retrieve the manager name for later delta
 	std::string mgr_name = reply.name();
 
-
 	// // TODO(justinmiron): Replace with call to GetView once implemented fully.
 	// Get the client name in a hacky way, replace with GetView once
 	// implemented with extended client.
 	IntroduceRequest mimic_request;
 	IntroduceRequest::StorageClientIntroduce* i =
-  mimic_request.mutable_storage_client();
+	  mimic_request.mutable_storage_client();
 	i->set_rpc_port(client_port);
 	i->set_rpc_hostname(client_hostname);
 
 	std::string client_name = StorageMaster::GenerateName(mimic_request);
-	
+
 	InstallRuleRequest rule_request;
 	rule_request.set_client(client_name);
+
+	Rule* rule = rule_request.mutable_rule();
+	Rule::Action::GetAction * get = rule->add_action()->mutable_get_action();
+
+	get->set_key("KEY");
+	get->mutable_mgr()->set_name(mgr_name);
 
 	s = master_interface_->InstallRule(rule_request);
 	EXPECT_TRUE(s.ok());
