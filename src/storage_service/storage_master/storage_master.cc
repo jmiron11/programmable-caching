@@ -195,6 +195,13 @@ void StorageMaster::FillInRule(Rule* rule) {
       remove_action->mutable_mgr()->set_uri(p.rpc_uri);
       break;
     }
+    case Rule::Action::kPutAction: {
+      Rule::Action::PutAction * put_action = action.mutable_put_action();
+      StorageMaster::PeerTracker::Peer p = peer_tracker_.GetPeerFromName(
+                                             put_action->mgr().name());
+      put_action->mutable_mgr()->set_uri(p.rpc_uri);
+      break;
+    }
     case Rule::Action::ACTION_TYPE_NOT_SET: {
       LOG(ERROR) << "No action set in action.";
       break;
