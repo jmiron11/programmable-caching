@@ -9,6 +9,7 @@
 
 using grpc::Status;
 using grpc::ServerContext;
+using grpc::Server;
 
 class StorageClient final : public StorageClientService::Service {
  public:
@@ -16,6 +17,9 @@ class StorageClient final : public StorageClientService::Service {
 	              const std::string& manager_port,
 	              const std::string& master_hostname,
 	              const std::string& master_port);
+
+	void Start();
+	void Stop();
 
 	Status Get(ServerContext* context,
 	           const GetRequest* request,
@@ -38,7 +42,12 @@ class StorageClient final : public StorageClientService::Service {
 	                  Empty* reply) override;
 
  private:
+ 	const std::string client_hostname_;
+ 	const std::string client_port_;
  	StorageMasterInterface master_interface_;
+
+ 	std::unique_ptr<Server> server_;
+
 };
 
 #endif

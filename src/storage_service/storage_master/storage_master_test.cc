@@ -135,6 +135,6 @@ TEST_F(StorageMasterTest, FillInRulePopulatesMgrRpcUri){
 	// Retrieve the manager name for later delta
 	std::string mgr_name = reply.name();
 	
-	
+	InstallRuleRequest rule_request;	
 
 }

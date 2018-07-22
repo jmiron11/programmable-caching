@@ -64,7 +64,6 @@ class StorageMaster final : public MasterService::Service {
 
   void Start(); // Start the storage master service
   void Stop(); // Stops the storage master service
-  void MasterThread();
 
   std::string GenerateName(const IntroduceRequest& reply);
 
@@ -105,8 +104,6 @@ class StorageMaster final : public MasterService::Service {
 
   std::string master_hostname_;
   std::string master_port_;
-
-  std::thread master_thread_;
   std::unique_ptr<Server> server_;
 };
 

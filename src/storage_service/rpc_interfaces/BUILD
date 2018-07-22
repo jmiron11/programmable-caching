@@ -10,6 +10,20 @@ cc_library(
 	] + GRPC_COMPILE_DEPS
 )
 
+cc_test(
+	name = "storage_client_interface_test",
+	srcs = ["storage_client_interface_test.cc"],
+  copts = [
+  	"-Iexternal/gtest",
+  ],
+	deps = [
+		":storage_client_interface",
+		"//storage_service/storage_master:storage_master",
+		"//storage_service/storage_client:storage_client",
+		"//proto:storage_service_proto",
+		"//external:gtest"
+	]
+)
 
 cc_library(
 	name = "storage_master_interface",
