@@ -6,6 +6,8 @@ cc_library(
 	srcs = ["execution_engine.cc"],
 	hdrs = ["execution_engine.h"],
 	deps = [
+		"//storage_service/rpc_interfaces:storage_client_interface",
+		"//scheduler/rpc_interfaces:scheduler_interface",
 		"//external:glog",
 		"//proto:execution_engine_proto",
 	] + GRPC_COMPILE_DEPS

@@ -29,12 +29,12 @@ void Scheduler::Start() {
 	builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
 	builder.RegisterService(this);
 	server_ = builder.BuildAndStart();
-	LOG(INFO) << "Storage manager listening on " << server_address;
+	LOG(INFO) << "Scheduler listening on " << server_address;
 }
 
 void Scheduler::Stop() {
 	server_->Shutdown();
-	LOG(INFO) << "Storage manager shutdown";
+	LOG(INFO) << "Scheduler shutdown";
 }
 
 Status Scheduler::SubmitJob(ServerContext* context,

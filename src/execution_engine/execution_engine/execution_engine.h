@@ -2,6 +2,8 @@
 #define EXECUTION_ENGINE_
 
 #include "proto/execution_engine.grpc.pb.h"
+#include "storage_service/rpc_interfaces/storage_client_interface.h"
+#include "scheduler/rpc_interfaces/scheduler_interface.h"
 
 #include <grpcpp/grpcpp.h>
 #include <string>
@@ -28,6 +30,11 @@ class ExecutionEngine final : public ExecutionEngineService::Service {
 	                 Empty* reply) override;
 
  private:
+ 	std::string execution_engine_hostname_, execution_engine_port_;	
+ 	SchedulerInterface scheduler_interface_;
+ 	StorageClientInterface storage_client_interface_;
+ 	std::unique_ptr<Server> server_;
+
 };
 
 #endif
