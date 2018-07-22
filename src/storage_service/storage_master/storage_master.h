@@ -49,6 +49,7 @@ class StorageMaster final : public MasterService::Service {
       std::unordered_map <std::string, int> file_keys;
     };
 
+    void AddManager(const std::string& manager_name);
     void AddFileToManager(const std::string& manager_name,
                           const std::string& file_key);
     void RemoveFileFromManager(const std::string& manager_name,

@@ -94,42 +94,42 @@ message RemoveRequest {
 	string key = 1;
 }
 
-message Rule {
+message Action {	
 	message Manager {
 		string name = 1; // populated by scheduler
 		string uri = 2; // populated by storage master
 	}
 
-	message Action {	
-		message GetAction {
-			string key = 1;
-			Manager mgr = 2;
-		}
-
-		message CopyFromAction {
-			string key = 1;
-			Manager src_mgr = 2;
-			Manager dst_mgr = 3;
-		}
-
-		message RemoveAction {
-			string key = 1;
-			Manager mgr = 2;	
-		}
-
-		message PutAction {
-			string key = 1;
-			Manager mgr = 2;
-		}
-
-		oneof action_type {
-			GetAction get_action = 1;
-			CopyFromAction copy_from_action = 2;
-			RemoveAction remove_action = 3;
-			PutAction put_action = 4;
-		}
+	message GetAction {
+		string key = 1;
+		Manager mgr = 2;
 	}
-	
+
+	message CopyFromAction {
+		string key = 1;
+		Manager src_mgr = 2;
+		Manager dst_mgr = 3;
+	}
+
+	message RemoveAction {
+		string key = 1;
+		Manager mgr = 2;	
+	}
+
+	message PutAction {
+		string key = 1;
+		Manager mgr = 2;
+	}
+
+	oneof action_type {
+		GetAction get_action = 1;
+		CopyFromAction copy_from_action = 2;
+		RemoveAction remove_action = 3;
+		PutAction put_action = 4;
+	}
+}
+
+message Rule {	
 	OperationType op_type = 1;
 	string key = 2;
 	repeated Action action = 4;
@@ -146,13 +146,7 @@ message RemoveRuleRequest {
 }
 
 message StorageChangeRequest {
-	message Delta{
-		OperationType op = 1;
-		string key = 2;
-		string manager = 3;
-	}
-
-	repeated Delta storage_change = 1;
+	repeated Action storage_change = 1;
 }
 
 message GetViewReply {
@@ -163,5 +157,11 @@ message GetViewReply {
 		repeated string key = 2; // Keys at the manager
 	}	
 
+	message ClientView {
+		string name = 1;
+		string uri = 2;
+	}
+
 	repeated ManagerView view = 1;
+	repeated ClientView client = 2;
 }

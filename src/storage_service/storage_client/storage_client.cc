@@ -42,16 +42,16 @@ void StorageClient::Stop() {
 	LOG(INFO) << "Storage client shut down";
 }
 
-void StorageClient::ExecuteGetAction(const Rule::Action::GetAction& action,
+void StorageClient::ExecuteGetAction(const Action::GetAction& action,
                                      GetReply* reply) {
 	GetRequest req;
 	req.set_key(action.key());
 
 	StorageManagerInterface manager_interface(action.mgr().uri());
-	manager_interface.Get(req, reply);	
+	manager_interface.Get(req, reply);
 }
 
-void StorageClient::ExecuteCopyAction(const Rule::Action::CopyFromAction&
+void StorageClient::ExecuteCopyAction(const Action::CopyFromAction&
                                       action) {
 	CopyFromRequest req;
 	req.set_key(action.key());
@@ -61,16 +61,19 @@ void StorageClient::ExecuteCopyAction(const Rule::Action::CopyFromAction&
 	manager_interface.CopyFrom(req);
 }
 
-void StorageClient::ExecutePutAction(const Rule::Action::PutAction& action,
+void StorageClient::ExecutePutAction(const Action::PutAction& action,
                                      const PutRequest* request ) {
 	StorageManagerInterface manager_interface(action.mgr().uri());
-	manager_interface.Put(*request);
+	Status s = manager_interface.Put(*request);
+
+	StorageChangeRequest req;
+	master_interface_.StorageChange(req);
 }
 
-void StorageClient::ExecuteRemoveAction(const Rule::Action::RemoveAction&
+void StorageClient::ExecuteRemoveAction(const Action::RemoveAction&
                                         action) {
 	RemoveRequest req;
-	req.set_key(action.key());	
+	req.set_key(action.key());
 	StorageManagerInterface manager_interface(action.mgr().uri());
 	manager_interface.Remove(req);
 }
@@ -83,37 +86,44 @@ Status StorageClient::Get(ServerContext* context,
 	Rule r = rule_db_.GetMatchingRule(request->key(), OperationType::GET);
 
 	// Perform all actions except the last action.
+	StorageChangeRequest req;
 	for (int action_idx = 0; action_idx < r.action_size() - 1; ++action_idx) {
-		Rule::Action current_action = r.action(action_idx);
+		Action current_action = r.action(action_idx);
 
 		switch (current_action.action_type_case()) {
-		case Rule::Action::kGetAction: {
+		case Action::kGetAction: {
 			LOG(ERROR) << "GetAction is not allowed except as last action";
 			assert(false);
 			break;
 		}
-		case Rule::Action::kCopyFromAction: {
+		case Action::kCopyFromAction: {
+			LOG(INFO) << "Copy action";
 			ExecuteCopyAction(current_action.copy_from_action());
+			*req.add_storage_change() = current_action;
 			break;
 		}
-		case Rule::Action::kRemoveAction: {
+		case Action::kRemoveAction: {
+			*req.add_storage_change() = current_action;
 			ExecuteRemoveAction(current_action.remove_action());
+			break;
 		}
-		case Rule::Action::kPutAction: {
+		case Action::kPutAction: {
 			// Put action is meaningless here
 			LOG(ERROR) << "PutAction is not allowed for get requests";
 			assert(false);
 			break;
 		}
-		case Rule::Action::ACTION_TYPE_NOT_SET: {
+		case Action::ACTION_TYPE_NOT_SET: {
 			LOG(ERROR) << "Ill-formed action missing action type";
 			break;
 		}
 		}
 	}
 
+	Status s = master_interface_.StorageChange(req);
+	assert(s.ok());
 	// Assert that last action has OperationType::GET
-	Rule::Action last_action = r.action(r.action_size() - 1);
+	Action last_action = r.action(r.action_size() - 1);
 	assert(last_action.has_get_action());
 	assert(last_action.get_action().key() == request->key());
 
@@ -125,37 +135,43 @@ Status StorageClient::Put(ServerContext* context,
                           const PutRequest* request,
                           Empty* reply) {
 	// Get is received, check for rule (currently there must be a rule already).
-	assert(rule_db_.HasMatchingRule(request->key(), OperationType::GET));
-	Rule r = rule_db_.GetMatchingRule(request->key(), OperationType::GET);
+	assert(rule_db_.HasMatchingRule(request->key(), OperationType::PUT));
+	Rule r = rule_db_.GetMatchingRule(request->key(), OperationType::PUT);
 
 	// Perform all actions except the last action.
-	for (int action_idx = 0; action_idx < r.action_size() - 1; ++action_idx) {
-		Rule::Action current_action = r.action(action_idx);
+	StorageChangeRequest req;
+	for (int action_idx = 0; action_idx < r.action_size(); ++action_idx) {
+		Action current_action = r.action(action_idx);
 
 		switch (current_action.action_type_case()) {
-		case Rule::Action::kGetAction: {
+		case Action::kGetAction: {
 			LOG(ERROR) << "GetAction is meaningless for Put operations";
 			assert(false);
 			break;
 		}
-		case Rule::Action::kCopyFromAction: {
+		case Action::kCopyFromAction: {
 			ExecuteCopyAction(current_action.copy_from_action());
+			*req.add_storage_change() = current_action;
 			break;
 		}
-		case Rule::Action::kRemoveAction: {
+		case Action::kRemoveAction: {
 			ExecuteRemoveAction(current_action.remove_action());
+			*req.add_storage_change() = current_action;
 		}
-		case Rule::Action::kPutAction: {
+		case Action::kPutAction: {
 			assert(current_action.put_action().key() == request->key());
 			ExecutePutAction(current_action.put_action(), request);
+			*req.add_storage_change() = current_action;
 			break;
 		}
-		case Rule::Action::ACTION_TYPE_NOT_SET: {
+		case Action::ACTION_TYPE_NOT_SET: {
 			LOG(ERROR) << "Ill-formed aciton missing action type";
 			break;
 		}
 		}
 	}
+	Status s = master_interface_.StorageChange(req);
+	assert(s.ok());
 	return Status::OK;
 
 }

@@ -53,6 +53,13 @@ void StorageMaster::StorageFileView::ManagerFileView::PopulateManagerViewReply(
   }
 }
 
+void StorageMaster::StorageFileView::AddManager(const std::string&
+    manager_name) {
+  std::lock_guard<std::mutex> lock(view_mutex);
+  manager_views[manager_name] = ManagerFileView();
+}
+
+
 void StorageMaster::StorageFileView::AddFileToManager(const std::string&
     manager_name,
     const std::string& file_key) {
@@ -139,6 +146,7 @@ Status StorageMaster::Introduce(ServerContext * context,
     peer_tracker_.AddPeer(name, uri, context->peer());
 
     // Add files to the file manager
+    file_view_.AddManager(name);
     for (const auto& file_id : introduce.file()) {
       file_view_.AddFileToManager(name, file_id.key());
     }
@@ -169,15 +177,15 @@ void StorageMaster::FillInRule(Rule* rule) {
   // Switch statement based on action types, then set mgr's uri field in action.
   for (auto& action : *rule->mutable_action()) {
     switch (action.action_type_case()) {
-    case Rule::Action::kGetAction: {
-      Rule::Action::GetAction * get_action = action.mutable_get_action();
+    case Action::kGetAction: {
+      Action::GetAction * get_action = action.mutable_get_action();
       StorageMaster::PeerTracker::Peer p = peer_tracker_.GetPeerFromName(
                                              get_action->mgr().name());
       get_action->mutable_mgr()->set_uri(p.rpc_uri);
       break;
     }
-    case Rule::Action::kCopyFromAction: {
-      Rule::Action::CopyFromAction * copy_action = action.mutable_copy_from_action();
+    case Action::kCopyFromAction: {
+      Action::CopyFromAction * copy_action = action.mutable_copy_from_action();
 
       StorageMaster::PeerTracker::Peer p = peer_tracker_.GetPeerFromName(
                                              copy_action->src_mgr().name());
@@ -188,21 +196,21 @@ void StorageMaster::FillInRule(Rule* rule) {
       copy_action->mutable_dst_mgr()->set_uri(p.rpc_uri);
       break;
     }
-    case Rule::Action::kRemoveAction: {
-      Rule::Action::RemoveAction * remove_action = action.mutable_remove_action();
+    case Action::kRemoveAction: {
+      Action::RemoveAction * remove_action = action.mutable_remove_action();
       StorageMaster::PeerTracker::Peer p = peer_tracker_.GetPeerFromName(
                                              remove_action->mgr().name());
       remove_action->mutable_mgr()->set_uri(p.rpc_uri);
       break;
     }
-    case Rule::Action::kPutAction: {
-      Rule::Action::PutAction * put_action = action.mutable_put_action();
+    case Action::kPutAction: {
+      Action::PutAction * put_action = action.mutable_put_action();
       StorageMaster::PeerTracker::Peer p = peer_tracker_.GetPeerFromName(
                                              put_action->mgr().name());
       put_action->mutable_mgr()->set_uri(p.rpc_uri);
       break;
     }
-    case Rule::Action::ACTION_TYPE_NOT_SET: {
+    case Action::ACTION_TYPE_NOT_SET: {
       LOG(ERROR) << "No action set in action.";
       break;
     }
@@ -244,7 +252,7 @@ Status StorageMaster::RemoveRule(ServerContext* context,
 
   // Create stub to client
   StorageClientInterface client(p.rpc_uri);
-  
+
   // send rule request to client
   return client.RemoveRule(new_request);
 }
@@ -254,21 +262,27 @@ Status StorageMaster::StorageChange(ServerContext* context,
                                     Empty* reply) {
 
   for (const auto& change : request->storage_change()) {
-    switch (change.op()) {
-    case OperationType::PUT: {
-      LOG(INFO) << "Added key: " << change.key() << " from " << change.manager();
-      file_view_.AddFileToManager(change.manager(), change.key());
+    switch (change.action_type_case()) {
+    case Action::kCopyFromAction: {
+      Action::CopyFromAction copy_action = change.copy_from_action();
+      file_view_.AddFileToManager(copy_action.src_mgr().name(), copy_action.key());
+      file_view_.RemoveFileFromManager(copy_action.dst_mgr().name(), copy_action.key());
       break;
     }
-    case OperationType::REMOVE: {
-      LOG(INFO) << "Removed key: " << change.key() << " from " << change.manager();
-      file_view_.RemoveFileFromManager(change.manager(), change.key());
+    case Action::kRemoveAction: {
+      Action::RemoveAction remove_action = change.remove_action();
+      file_view_.RemoveFileFromManager(remove_action.mgr().name(), remove_action.key());
       break;
     }
-    default: {
+    case Action::kPutAction: {
+      Action::PutAction put_action = change.put_action();
+      file_view_.AddFileToManager(put_action.mgr().name(), put_action.key());
+      break;
+    }
+    case Action::kGetAction:
+    case Action::ACTION_TYPE_NOT_SET:
       continue;
-    }
-    }
+  }
   }
   return Status::OK;
 }

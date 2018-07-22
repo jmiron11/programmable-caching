@@ -44,14 +44,14 @@ class StorageClient final : public StorageClientService::Service {
 
  private:
 
-	void ExecuteGetAction(const Rule::Action::GetAction& action, GetReply* reply);
+	void ExecuteGetAction(const Action::GetAction& action, GetReply* reply);
 
-	void ExecuteCopyAction(const Rule::Action::CopyFromAction& action);
+	void ExecuteCopyAction(const Action::CopyFromAction& action);
 
-	void ExecutePutAction(const Rule::Action::PutAction& action,
+	void ExecutePutAction(const Action::PutAction& action,
 	                      const PutRequest* request);
 
-	void ExecuteRemoveAction(const Rule::Action::RemoveAction& action);
+	void ExecuteRemoveAction(const Action::RemoveAction& action);
 
 	RuleDb rule_db_;
 

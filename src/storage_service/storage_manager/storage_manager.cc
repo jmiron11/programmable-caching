@@ -30,9 +30,7 @@ StorageManager::StorageManager(const std::string& manager_hostname,
 	  storage_interface_(std::move(storage_interface)) { }
 
 void StorageManager::Start() {
-	LOG(INFO) << "Introducing self to master";
 	Introduce(manager_port_, manager_hostname_);
-	LOG(INFO) << "Introduced to master";
 	// Begin processing of storage management RPCs.
 	std::string server_address(manager_hostname_ + ':' + manager_port_);
 	ServerBuilder builder;
@@ -88,7 +86,6 @@ Status StorageManager::Put(ServerContext* context,
                            Empty* reply) {
 	// Puts file in database
 	// Send RPC to master informing of operation
-	LOG(INFO) << "Recieved Put req";
 	StorageInterface::Status s = storage_interface_->Put(request->key(),
 	                             request->value());
 	if (s != StorageInterface::OK) {

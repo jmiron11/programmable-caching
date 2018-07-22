@@ -83,17 +83,14 @@ TEST_F(StorageMasterTest, UpdateToDateGlobalView) {
 
 	// Remove f2 from mgr and add f3.
 	StorageChangeRequest change_request;
-	StorageChangeRequest::Delta* d;
-	d = change_request.add_storage_change();
+	Action::PutAction* put_action = change_request.add_storage_change()->mutable_put_action();
+	put_action->set_key("f3");
+	put_action->mutable_mgr()->set_name(mgr_name);
 
-	d->set_op(OperationType::PUT);
-	d->set_key("f3");
-	d->set_manager(mgr_name);
+	Action::RemoveAction* remove_action = change_request.add_storage_change()->mutable_remove_action();
+	remove_action->set_key("f2");
+	remove_action->mutable_mgr()->set_name(mgr_name);
 
-	d = change_request.add_storage_change();
-	d->set_op(OperationType::REMOVE);
-	d->set_key("f2");
-	d->set_manager(mgr_name);
 
 	// Issue storage change to the master
 	master_interface_->StorageChange(change_request);
@@ -167,7 +164,7 @@ TEST_F(StorageMasterWithClientTest, FillInRulePopulatesMgrRpcUri) {
 	// Retrieve the manager name for later delta
 	std::string mgr_name = reply.name();
 
-	// // TODO(justinmiron): Replace with call to GetView once implemented fully.
+	// TODO(justinmiron): Replace with call to GetView once implemented fully.
 	// Get the client name in a hacky way, replace with GetView once
 	// implemented with extended client.
 	IntroduceRequest mimic_request;
@@ -182,7 +179,7 @@ TEST_F(StorageMasterWithClientTest, FillInRulePopulatesMgrRpcUri) {
 	rule_request.set_client(client_name);
 
 	Rule* rule = rule_request.mutable_rule();
-	Rule::Action::GetAction * get = rule->add_action()->mutable_get_action();
+	Action::GetAction * get = rule->add_action()->mutable_get_action();
 
 	get->set_key("KEY");
 	get->mutable_mgr()->set_name(mgr_name);
