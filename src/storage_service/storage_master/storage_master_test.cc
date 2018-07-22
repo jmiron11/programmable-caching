@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 #include "storage_master.h"
+#include "storage_service/storage_client/storage_client.h"
 #include "storage_service/rpc_interfaces/storage_master_interface.h"
 
 #include <grpcpp/grpcpp.h>
@@ -107,14 +108,44 @@ TEST_F(StorageMasterTest, UpdateToDateGlobalView) {
 	EXPECT_EQ(new_set_of_files.size(), new_mgr_view.key_size());
 
 	// Each manager file actually exists in the view.
-	LOG(INFO) << "new keys";
 	for(const auto& key : new_mgr_view.key()){
-		LOG(INFO) << key;
 		EXPECT_NE(new_set_of_files.find(key), new_set_of_files.end());
 	}
 }
 
-TEST_F(StorageMasterTest, FillInRulePopulatesMgrRpcUri){
+// TODO(justinmiron): Replace storage client with a fake.
+class StorageMasterWithClientTest : public ::testing::Test {
+ public:
+	StorageMasterWithClientTest():
+		master_(master_hostname, master_port),
+		client_(client_hostname, client_port,
+		        master_hostname, master_port) { }
+
+	void SetUp() override {
+		master_.Start();
+		std::this_thread::sleep_for(std::chrono::milliseconds(50));
+		client_.Start();
+		master_interface_.reset(new StorageMasterInterface(master_hostname, 
+		                        master_port));
+	}
+
+	void TearDown() override {
+		client_.Stop();
+		master_.Stop();
+		std::this_thread::sleep_for(std::chrono::milliseconds(50));
+	}
+
+	const std::string master_hostname = "localhost";
+	const std::string master_port = "50055";
+	const std::string client_hostname = "localhost";
+	const std::string client_port = "50056";
+	StorageMaster master_;
+	StorageClient client_;
+	std::unique_ptr<StorageMasterInterface> master_interface_;
+};
+
+
+TEST_F(StorageMasterWithClientTest, FillInRulePopulatesMgrRpcUri){
 
 	// Introduce manager
 	IntroduceRequest request;
@@ -129,12 +160,26 @@ TEST_F(StorageMasterTest, FillInRulePopulatesMgrRpcUri){
 	Status s = master_interface_->Introduce(request, &reply);
 	EXPECT_TRUE(s.ok());
 
-
 	std::string mgr_uri = "hostname:1234";
 
 	// Retrieve the manager name for later delta
 	std::string mgr_name = reply.name();
-	
-	InstallRuleRequest rule_request;	
 
+
+	// // TODO(justinmiron): Replace with call to GetView once implemented fully.
+	// Get the client name in a hacky way, replace with GetView once
+	// implemented with extended client.
+	IntroduceRequest mimic_request;
+	IntroduceRequest::StorageClientIntroduce* i =
+  mimic_request.mutable_storage_client();
+	i->set_rpc_port(client_port);
+	i->set_rpc_hostname(client_hostname);
+
+	std::string client_name = StorageMaster::GenerateName(mimic_request);
+	
+	InstallRuleRequest rule_request;
+	rule_request.set_client(client_name);
+
+	s = master_interface_->InstallRule(rule_request);
+	EXPECT_TRUE(s.ok());
 }

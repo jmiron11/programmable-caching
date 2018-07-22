@@ -65,7 +65,7 @@ class StorageMaster final : public MasterService::Service {
   void Start(); // Start the storage master service
   void Stop(); // Stops the storage master service
 
-  std::string GenerateName(const IntroduceRequest& reply);
+  static std::string GenerateName(const IntroduceRequest& reply);
 
   Status Introduce(ServerContext* context, const IntroduceRequest* request,
                    IntroduceReply* reply) override;

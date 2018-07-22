@@ -6,9 +6,10 @@ cc_library(
 	hdrs = ["storage_master.h"],
 	srcs = ["storage_master.cc"],
 	deps = [
-		"//proto:storage_service_proto",
 		"//external:glog",
-	] + GRPC_COMPILE_DEPS
+		"//proto:storage_service_proto",	
+		"//storage_service/rpc_interfaces:storage_client_interface"
+		] + GRPC_COMPILE_DEPS
 )
 
 cc_binary(
@@ -28,6 +29,7 @@ cc_test(
   	"-Iexternal/gtest",
   ],
 	deps = [
+		"//storage_service/storage_client:storage_client",
 		"//storage_service/rpc_interfaces:storage_master_interface",
 		":storage_master",
 		"//proto:storage_service_proto",

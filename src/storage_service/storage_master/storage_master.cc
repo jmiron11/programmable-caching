@@ -1,5 +1,6 @@
 #include "proto/storage_service.grpc.pb.h"
 #include "storage_master.h"
+#include "storage_service/rpc_interfaces/storage_client_interface.h"
 
 #include <grpcpp/grpcpp.h>
 #include <glog/logging.h>
@@ -16,6 +17,7 @@ using grpc::ClientContext;
 StorageMaster::PeerTracker::Peer StorageMaster::PeerTracker::GetPeerFromName(
   const std::string& name) const {
   // TODO(justinmiron): Asking for a segfault.
+  LOG(INFO) << "Attempting to retrieve peer with name: " << name;
   return *name_to_peer_.at(name);
 }
 
@@ -29,6 +31,7 @@ const {
 void StorageMaster::PeerTracker::AddPeer(const std::string& name,
     const std::string& rpc_uri, const std::string& connection_uri) {
   std::lock_guard<std::mutex> lock(tracker_mutex);
+  LOG(INFO) << "Adding peer " << name << " " << rpc_uri << " " <<connection_uri;
   name_to_peer_[name] = std::make_shared<Peer>(name, rpc_uri, connection_uri);
   connection_to_peer_[connection_uri] = name_to_peer_[name];
 }
@@ -164,6 +167,7 @@ Status StorageMaster::Heartbeat(ServerContext * context,
 
 void StorageMaster::FillInRule(Rule* rule) {
   // Switch statement based on action types, then set mgr's uri field in action.
+
 }
 
 Status StorageMaster::InstallRule(ServerContext* context,
@@ -171,21 +175,20 @@ Status StorageMaster::InstallRule(ServerContext* context,
                                   Empty* reply) {
   InstallRuleRequest new_request = *request;
 
-  // Get uri of client
-  // StorageMaster::PeerTracker::Peer p = peer_tracker_.GetPeerFromName(
-  //                                        request->client());
-  // std::string client_uri = p.rpc_uri;
+  // Get uri of client, requires client has already connected. Otherwise
+  // explodes.
+  StorageMaster::PeerTracker::Peer p = peer_tracker_.GetPeerFromName(
+                                         request->client());
+  std::string client_uri = p.rpc_uri;
 
   // Create stub to client
-  // StorageClientInterface client()
+  StorageClientInterface client(p.rpc_uri);
 
   // Update rule request to fill in actions with mgr rpc uri's
   FillInRule(new_request.mutable_rule());
 
   // send rule request to client
-
-
-  return Status::OK;
+  return client.InstallRule(new_request);
 }
 
 Status StorageMaster::RemoveRule(ServerContext* context,
