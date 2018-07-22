@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+import "proto/common.proto";
+
 service MasterService {
 	rpc Introduce (IntroduceRequest) returns (IntroduceReply) {}
 	rpc Heartbeat (Empty) returns (Empty) {}
@@ -34,14 +36,6 @@ enum StorageType {
 	MANAGED = 0;
 	UNMANAGED = 1;
 }
-
-enum OperationType {
-	GET = 0;			// 
-	PUT = 1;			// puts in dst_mgr
-	REMOVE = 2;		// removes from src_mgr
-}	
-
-message Empty {}
 
 message IntroduceRequest {
 
@@ -92,47 +86,6 @@ message PutRequest {
 
 message RemoveRequest {
 	string key = 1;
-}
-
-message Action {	
-	message Manager {
-		string name = 1; // populated by scheduler
-		string uri = 2; // populated by storage master
-	}
-
-	message GetAction {
-		string key = 1;
-		Manager mgr = 2;
-	}
-
-	message CopyFromAction {
-		string key = 1;
-		Manager src_mgr = 2;
-		Manager dst_mgr = 3;
-	}
-
-	message RemoveAction {
-		string key = 1;
-		Manager mgr = 2;	
-	}
-
-	message PutAction {
-		string key = 1;
-		Manager mgr = 2;
-	}
-
-	oneof action_type {
-		GetAction get_action = 1;
-		CopyFromAction copy_from_action = 2;
-		RemoveAction remove_action = 3;
-		PutAction put_action = 4;
-	}
-}
-
-message Rule {	
-	OperationType op_type = 1;
-	string key = 2;
-	repeated Action action = 4;
 }
 
 message InstallRuleRequest {

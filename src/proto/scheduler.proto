@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+import "proto/common.proto";
+
+service SchedulerService {
+	rpc SubmitJob (Job) returns (Empty) {}
+	rpc Done (Task) returns (Empty) {}
+}

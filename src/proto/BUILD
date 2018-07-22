@@ -13,9 +13,42 @@ package(default_visibility = ["//visibility:public"])
 #)
 
 cpp_proto_library(
+	name = "common_proto",
+	protos = [
+		"common.proto",
+	],
+)
+
+cpp_proto_library(
+	name = "execution_engine_proto",
+	protos = [
+		"execution_engine.proto",
+	],
+	proto_deps = [
+		":common_proto",
+	],
+	with_grpc=True,
+)
+
+cpp_proto_library(
+	name = "scheduler_proto",
+	protos = [
+		"scheduler.proto",
+	],
+	proto_deps = [
+		":common_proto",
+	],
+	with_grpc=True,
+)
+
+
+cpp_proto_library(
 	name = "storage_service_proto",
 	protos = [
 		"storage_service.proto",
+	],
+	proto_deps = [
+		":common_proto",
 	],
 	with_grpc=True,
 )

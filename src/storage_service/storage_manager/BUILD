@@ -17,7 +17,9 @@ cc_binary(
 	name = "rocksdb_storage_manager_binary",
 	srcs = ["rocksdb_storage_manager_binary.cc"],
 	deps = [
-		":rocksdb_storage_manager",
+		":storage_manager",
+		"//storage_service/storage_interfaces:storage_interface",
+		"//storage_service/storage_interfaces:rocksdb_storage_interface",
 		"//external:gflags",
 		"//external:glog",
 	]
