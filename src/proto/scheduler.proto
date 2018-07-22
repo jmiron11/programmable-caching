@@ -2,7 +2,12 @@ syntax = "proto3";
 
 import "proto/common.proto";
 
+message SchedulerIntroduceRequest {
+	string rpc_uri = 1;
+}
+
 service SchedulerService {
 	rpc SubmitJob (Job) returns (Empty) {}
 	rpc Done (Task) returns (Empty) {}
+	rpc Introduce (SchedulerIntroduceRequest) returns (Empty) {}
 }

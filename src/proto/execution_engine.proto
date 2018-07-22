@@ -2,6 +2,6 @@ syntax = "proto3";
 
 import "proto/common.proto";
 
-service ExecutionEngine {
+service ExecutionEngineService {
 	rpc Execute (Task) returns (Empty) {}
 } 

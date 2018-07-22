@@ -1,12 +1,14 @@
 syntax = "proto3";
 
 message Task {
-	string input_file = 1;
-	string output_file = 2;
+	string id = 1;
+	string input_file = 2;
+	string output_file = 3;
 }
 
 message Job {
-	repeated Task task = 1;
+	string id = 1;
+	repeated Task task = 2;
 }
 
 enum OperationType {
