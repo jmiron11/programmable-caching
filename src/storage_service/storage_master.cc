@@ -5,6 +5,7 @@
 #include <glog/logging.h>
 #include <thread>
 #include <chrono>
+#include <memory>
 
 using grpc::Server;
 using grpc::ServerBuilder;
@@ -12,15 +13,24 @@ using grpc::ServerContext;
 using grpc::Status;
 using grpc::ClientContext;
 
-std::string StorageMaster::PeerTracker::GetUri(const std::string& name) {
-  std::lock_guard<std::mutex> lock(tracker_mutex);
-  return name_to_uri_[name];
+StorageMaster::PeerTracker::Peer StorageMaster::PeerTracker::GetPeerFromName(
+  const std::string& name) const {
+  // TODO(justinmiron): Asking for a segfault.
+  return *name_to_peer_.at(name);
+}
+
+StorageMaster::PeerTracker::Peer
+StorageMaster::PeerTracker::GetPeerFromConnection(const std::string& conn)
+const {
+  // TODO(justinmiron): Asking for a segfault.
+  return *connection_to_peer_.at(conn);
 }
 
 void StorageMaster::PeerTracker::AddPeer(const std::string& name,
-    const std::string& uri) {
+    const std::string& rpc_uri, const std::string& connection_uri) {
   std::lock_guard<std::mutex> lock(tracker_mutex);
-  name_to_uri_[name] = uri;
+  name_to_peer_[name] = std::make_shared<Peer>(name, rpc_uri, connection_uri);
+  connection_to_peer_[connection_uri] = name_to_peer_[name];
 }
 
 void StorageMaster::StorageFileView::ManagerFileView::AddFile(
@@ -35,7 +45,7 @@ void StorageMaster::StorageFileView::ManagerFileView::RemoveFile(
 
 void StorageMaster::StorageFileView::ManagerFileView::PopulateManagerViewReply(
   GetViewReply::ManagerView* view_reply) const {
-  for(const auto& files : file_keys) {
+  for (const auto& files : file_keys) {
     view_reply->add_key(files.first);
   }
 }
@@ -43,6 +53,7 @@ void StorageMaster::StorageFileView::ManagerFileView::PopulateManagerViewReply(
 void StorageMaster::StorageFileView::AddFileToManager(const std::string&
     manager_name,
     const std::string& file_key) {
+  std::lock_guard<std::mutex> lock(view_mutex);
   StorageMaster::StorageFileView::ManagerFileView& view =
     manager_views[manager_name];
   view.AddFile(file_key);
@@ -51,12 +62,15 @@ void StorageMaster::StorageFileView::AddFileToManager(const std::string&
 void StorageMaster::StorageFileView::RemoveFileFromManager(
   const std::string& manager_name,
   const std::string& file_key) {
+  std::lock_guard<std::mutex> lock(view_mutex);
   StorageMaster::StorageFileView::ManagerFileView& view =
     manager_views[manager_name];
   view.RemoveFile(file_key);
 }
 
-void StorageMaster::StorageFileView::PopulateViewReply(GetViewReply * reply) const {
+void StorageMaster::StorageFileView::PopulateViewReply(GetViewReply * reply)
+const {
+  std::lock_guard<std::mutex> lock(view_mutex);
   for (const auto& name_view_pair : manager_views) {
     const std::string& name = name_view_pair.first;
     const StorageMaster::StorageFileView::ManagerFileView& view =
@@ -117,12 +131,12 @@ Status StorageMaster::Introduce(ServerContext * context,
       request->storage_manager();
 
     std::string uri = introduce.rpc_hostname() + ":" + introduce.rpc_port();
-  
-    // Begin tracking peer 
-    peer_tracker_.AddPeer(name, uri);
+
+    // Begin tracking peer
+    peer_tracker_.AddPeer(name, uri, context->peer());
 
     // Add files to the file manager
-    for(const auto& file_id : introduce.file()) {
+    for (const auto& file_id : introduce.file()) {
       file_view_.AddFileToManager(name, file_id.key());
     }
     break;
@@ -130,7 +144,7 @@ Status StorageMaster::Introduce(ServerContext * context,
   case IntroduceRequest::kStorageClient: {
     IntroduceRequest::StorageClientIntroduce introduce = request->storage_client();
     std::string uri = introduce.rpc_hostname() + ":" + introduce.rpc_port();
-    peer_tracker_.AddPeer(name, uri);
+    peer_tracker_.AddPeer(name, uri, context->peer());
     break;
   }
   case IntroduceRequest::INTRODUCE_NOT_SET: {
@@ -158,7 +172,9 @@ Status StorageMaster::InstallRule(ServerContext* context,
   InstallRuleRequest new_request = *request;
 
   // Get uri of client
-  std::string client_uri = peer_tracker_.GetUri(request->client());
+  StorageMaster::PeerTracker::Peer p = peer_tracker_.GetPeerFromName(
+                                         request->client());
+  std::string client_uri = p.rpc_uri;
 
   // Create stub to client
 
@@ -181,6 +197,24 @@ Status StorageMaster::RemoveRule(ServerContext* context,
 Status StorageMaster::StorageChange(ServerContext* context,
                                     const StorageChangeRequest* request,
                                     Empty* reply) {
+
+  for(const auto& change : request->storage_change()) {
+    switch(change.op()) {
+      case OperationType::PUT: {
+        LOG(INFO) << "Added key: " << change.key() << " from " << change.manager();
+        file_view_.AddFileToManager(change.manager(), change.key());
+        break;
+      }
+      case OperationType::REMOVE: {
+        LOG(INFO) << "Removed key: " << change.key() << " from " << change.manager();
+        file_view_.RemoveFileFromManager(change.manager(), change.key());
+        break;
+      }
+      default: {
+        continue;
+      }
+    } 
+  }
   return Status::OK;
 }
 

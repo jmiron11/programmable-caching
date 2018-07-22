@@ -35,6 +35,12 @@ enum StorageType {
 	UNMANAGED = 1;
 }
 
+enum OperationType {
+	GET = 0;			// 
+	PUT = 1;			// puts in dst_mgr
+	REMOVE = 2;		// removes from src_mgr
+}	
+
 message Empty {}
 
 message IntroduceRequest {
@@ -141,11 +147,6 @@ message RemoveRuleRequest {
 
 message StorageChangeRequest {
 	message Delta{
-		enum OperationType {
-			PUT = 0;
-			REMOVE = 1;
-		}
-
 		OperationType op = 1;
 		string key = 2;
 		string manager = 3;

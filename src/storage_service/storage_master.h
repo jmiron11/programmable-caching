@@ -17,11 +17,23 @@ class StorageMaster final : public MasterService::Service {
   // Thread safe data structure for mapping names to uri's
   class PeerTracker {
    public:
-    std::string GetUri(const std::string& name);
-    void AddPeer(const std::string& name, const std::string& uri);
+    class Peer {
+     public:
+      Peer(const std::string& _name, const std::string& _rpc_uri,
+                 const std::string& _connection_uri):
+        name(_name), rpc_uri(_rpc_uri), connection_uri(_connection_uri){ }
+      std::string name;
+      std::string rpc_uri;
+      std::string connection_uri;
+    };
+    Peer GetPeerFromName(const std::string& name) const;
+    Peer GetPeerFromConnection(const std::string& name) const;
+    void AddPeer(const std::string& name, const std::string& rpc_uri,
+                 const std::string& connection_uri);
    private:
-    std::mutex tracker_mutex;
-    std::unordered_map<std::string, std::string> name_to_uri_;
+    mutable std::mutex tracker_mutex;
+    std::unordered_map<std::string, std::shared_ptr<Peer>> name_to_peer_;
+    std::unordered_map<std::string, std::shared_ptr<Peer>> connection_to_peer_;
   };
 
   // Thread safe data structure for managing a global view of the storage
@@ -44,7 +56,7 @@ class StorageMaster final : public MasterService::Service {
     void PopulateViewReply(GetViewReply * reply) const;
 
    private:
-    std::mutex view_mutex;
+    mutable std::mutex view_mutex;
     std::unordered_map<std::string, ManagerFileView> manager_views;
   };
 

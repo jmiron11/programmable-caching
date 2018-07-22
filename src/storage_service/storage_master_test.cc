@@ -51,10 +51,7 @@ TEST_F(StorageMasterTest, UpdateToDateGlobalView) {
 	introduce->set_rpc_hostname("hostname");
 	introduce->set_rpc_port("1234");
 
-	std::set<std::string> manager_files;
-	manager_files.insert("f1");
-	manager_files.insert("f2");
-
+	std::set<std::string> manager_files = {"f1", "f2"}; 
 	for (const auto& f : manager_files) {
 		IntroduceRequest::StorageManagerIntroduce::FileId* id = introduce->add_file();
 		id->set_key(f);
@@ -81,5 +78,38 @@ TEST_F(StorageMasterTest, UpdateToDateGlobalView) {
 	// Each manager file actually exists in the view.
 	for(const auto& key : mgr_view.key()){
 		EXPECT_NE(manager_files.find(key), manager_files.end());
+	}
+
+	// Remove f2 from mgr and add f3.
+	StorageChangeRequest change_request;
+	StorageChangeRequest::Delta* d;
+	d = change_request.add_storage_change(); 
+
+	d->set_op(OperationType::PUT);
+	d->set_key("f3");
+	d->set_manager(mgr_name);
+
+	d = change_request.add_storage_change();
+	d->set_op(OperationType::REMOVE);
+	d->set_key("f2");
+	d->set_manager(mgr_name);
+
+	// Issue storage change to the master
+	master_interface_->StorageChange(change_request);
+
+	std::set<std::string> new_set_of_files = {"f1", "f3"};
+	GetViewReply new_view_reply;
+	master_interface_->GetView(&new_view_reply);
+	EXPECT_EQ(new_view_reply.view_size(), 1);	
+
+	const GetViewReply::ManagerView& new_mgr_view = new_view_reply.view(0);
+	EXPECT_EQ(new_mgr_view.name(), mgr_name);
+	EXPECT_EQ(new_set_of_files.size(), new_mgr_view.key_size());
+
+	// Each manager file actually exists in the view.
+	LOG(INFO) << "new keys";
+	for(const auto& key : new_mgr_view.key()){
+		LOG(INFO) << key;
+		EXPECT_NE(new_set_of_files.find(key), new_set_of_files.end());
 	}
 }
