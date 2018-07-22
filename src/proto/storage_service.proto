@@ -117,10 +117,16 @@ message Rule {
 			Manager mgr = 2;	
 		}
 
+		message PutAction {
+			string key = 1;
+			Manager mgr = 2;
+		}
+
 		oneof action_type {
 			GetAction get_action = 1;
 			CopyFromAction copy_from_action = 2;
 			RemoveAction remove_action = 3;
+			PutAction put_action = 4;
 		}
 	}
 	
