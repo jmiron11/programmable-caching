@@ -5,7 +5,6 @@
 #include <glog/logging.h>
 
 #include <string>
-#include <thread>
 #include <chrono>
 
 using grpc::Channel;
@@ -25,36 +24,17 @@ StorageManager::StorageManager(const std::string& manager_hostname,
 	: master_interface_(master_hostname, master_port),
 	  manager_hostname_(manager_hostname),
 	  manager_port_(manager_port),
-	  master_hostname_(master_hostname),
-	  master_port_(master_port),
-	  storage_interface_(std::move(storage_interface)) { }
+	  storage_interface_(std::move(storage_interface)) 
+	  { }
 
 void StorageManager::Start() {
-	Introduce(manager_port_, manager_hostname_);
-	// Begin processing of storage management RPCs.
-	std::string server_address(manager_hostname_ + ':' + manager_port_);
-	ServerBuilder builder;
-	builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
-	builder.RegisterService((StorageManager*)this);
-	server_ = builder.BuildAndStart();
-	std::cout << "Storage Manager listening on " << server_address << std::endl;
-}
-
-void StorageManager::Stop() {
-	server_->Shutdown();
-}
-
-void StorageManager::Introduce(std::string manager_port,
-                               std::string manager_host) {
-
-	//Construct the introduce request and send it to the master
 	IntroduceRequest request;
 	IntroduceRequest::StorageManagerIntroduce* introduce =
 	  request.mutable_storage_manager();
 	introduce->set_storage_type(storage_interface_->GetStorageType());
 	introduce->set_storage_name(storage_interface_->GetStorageName());
-	introduce->set_rpc_port(manager_port);
-	introduce->set_rpc_hostname(manager_host);
+	introduce->set_rpc_port(manager_port_);
+	introduce->set_rpc_hostname(manager_hostname_);
 
 	std::vector<std::string> keys;
 	storage_interface_->GetAllKeys(&keys);
@@ -66,7 +46,21 @@ void StorageManager::Introduce(std::string manager_port,
 
 	IntroduceReply reply;
 	Status s = master_interface_.Introduce(request, &reply);
+	assert(s.ok());
 	name_ = reply.name();
+
+	// Begin processing of storage management RPCs.
+	std::string server_address(manager_hostname_ + ':' + manager_port_);
+	ServerBuilder builder;
+	builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
+	builder.RegisterService(this);
+	server_ = builder.BuildAndStart();
+	LOG(INFO) << "Storage manager listening on " << server_address;
+}
+
+void StorageManager::Stop() {
+	server_->Shutdown();
+	LOG(INFO) << "Storage manager shutdown";
 }
 
 Status StorageManager::Get(ServerContext* context,
@@ -115,6 +109,7 @@ Status StorageManager::CopyFrom(ServerContext* context,
 	  = StorageManagerService::NewStub(grpc::CreateChannel(
 	                                     request->dst_uri(),
 	                                     grpc::InsecureChannelCredentials()));
+
 	GetRequest get_request;
 	get_request.set_key(request->key());
 	GetReply get_reply;

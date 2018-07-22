@@ -1,6 +1,7 @@
 #include "storage_client.h"
 #include "proto/storage_service.grpc.pb.h"
 #include "storage_service/rpc_interfaces/storage_manager_interface.h"
+#include "storage_service/rpc_interfaces/storage_master_interface.h"
 
 #include <grpcpp/grpcpp.h>
 #include <glog/logging.h>
@@ -97,7 +98,6 @@ Status StorageClient::Get(ServerContext* context,
 			break;
 		}
 		case Action::kCopyFromAction: {
-			LOG(INFO) << "Copy action";
 			ExecuteCopyAction(current_action.copy_from_action());
 			*req.add_storage_change() = current_action;
 			break;

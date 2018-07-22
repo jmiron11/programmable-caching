@@ -125,3 +125,18 @@ bind(
     name = "served",
     actual = "@com_github_meltwater_served//:served",
 )
+
+new_git_repository(
+    name = "hiredis_git",
+    remote = "https://github.com/redis/hiredis",
+    commit = "97cd8157f74674c722dd30360caac1f498fa72ef",
+    build_file = "//:third_party/hiredis.BUILD"
+)
+bind(
+    name = "hiredis",
+    actual = "//third_party/hiredis:hiredis"
+)
+bind(
+    name = "hiredis_c",
+    actual = "@hiredis_git//:hiredis_c",
+)

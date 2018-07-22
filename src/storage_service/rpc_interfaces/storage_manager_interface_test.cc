@@ -15,7 +15,8 @@ class StorageManagerInterfaceTest : public ::testing::Test {
 		master_(master_hostname, master_port),
 		manager_(manager_hostname, manager_port,
 		         master_hostname, master_port,
-		         std::unique_ptr<StorageInterface>(new RocksDbStorageInterface("/tmp/rocksdb"))) { }
+		         std::unique_ptr<StorageInterface>(new RocksDbStorageInterface("/tmp/rocksdb")))
+	{ }
 
 	void SetUp() override {
 		master_.Start();
@@ -30,13 +31,13 @@ class StorageManagerInterfaceTest : public ::testing::Test {
 	void TearDown() override {
 		master_.Stop();
 		manager_.Stop();
-		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		std::this_thread::sleep_for(std::chrono::milliseconds(50));
 	}
 
 	const std::string master_hostname = "localhost";
-	const std::string master_port = "50051";
+	const std::string master_port = "50053";
 	const std::string manager_hostname = "localhost";
-	const std::string manager_port = "50052";
+	const std::string manager_port = "50055";
 	StorageMaster master_;
 	StorageManager manager_;
 	std::unique_ptr<StorageManagerInterface> manager_interface_;
@@ -45,7 +46,6 @@ class StorageManagerInterfaceTest : public ::testing::Test {
 
 TEST_F(StorageManagerInterfaceTest, Put) {
 	PutRequest request;
-	LOG(INFO) << "Issuing Put Request";
 	Status s = manager_interface_->Put(request);
 	EXPECT_TRUE(s.ok());
 }
@@ -53,7 +53,6 @@ TEST_F(StorageManagerInterfaceTest, Put) {
 TEST_F(StorageManagerInterfaceTest, Get) {
 	GetRequest request;
 	GetReply reply;
-	LOG(INFO) << "Issuing GET";
 	Status s = manager_interface_->Get(request, &reply);
 	EXPECT_TRUE(s.ok());
 }
@@ -64,8 +63,9 @@ TEST_F(StorageManagerInterfaceTest, Remove) {
 	EXPECT_TRUE(s.ok());
 }
 
-TEST_F(StorageManagerInterfaceTest, CopyFrom) {
-	CopyFromRequest request;
-	Status s = manager_interface_->CopyFrom(request);
-	EXPECT_TRUE(s.ok());
-}
+// TODO(justinmiron): Test with fake.
+// TEST_F(StorageManagerInterfaceTest, CopyFrom) {
+// 	CopyFromRequest request;
+// 	Status s = manager_interface_->CopyFrom(request);
+// 	EXPECT_TRUE(s.ok());
+// }

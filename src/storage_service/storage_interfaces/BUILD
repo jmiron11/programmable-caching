@@ -31,3 +31,26 @@ cc_test(
 		"//external:rocksdb"	
 	]
 )
+
+cc_library(
+	name = "redis_storage_interface",
+	hdrs = ["redis_storage_interface.h"],
+	srcs = ["redis_storage_interface.cc"],
+	deps = [
+		":storage_interface",
+		"//proto:storage_service_proto",
+		"//external:hiredis"
+	]
+)
+
+cc_test(
+	name = "redis_storage_interface_test",
+	srcs = ["redis_storage_interface_test.cc"],
+  copts = ["-Iexternal/gtest"],
+	deps = [
+		":storage_interface",
+		":redis_storage_interface",
+		"//external:glog",
+		"//external:gtest"
+	]
+)

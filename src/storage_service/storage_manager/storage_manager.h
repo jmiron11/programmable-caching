@@ -6,7 +6,6 @@
 #include "storage_service/rpc_interfaces/storage_master_interface.h"
 
 #include <string>
-#include <thread>
 
 using grpc::Status;
 using grpc::ServerContext;
@@ -41,25 +40,15 @@ class StorageManager : public StorageManagerService::Service {
 	           Empty* reply) override;
 
  private:
-	/* Interface and thread for communicating with master, this involves
-	   introductions and regular heartbeating. */
-
-	// Function executed in a thread that introduces storage manager to master,
-	// and regularly heartbeats at heartbeat_interval
-	void Introduce(std::string manager_port, std::string manager_host);
-
 	// Interface for RPCs with master.
 	StorageMasterInterface master_interface_;
 
 	std::string name_;
 	std::string manager_hostname_;
 	std::string manager_port_;
-	std::string master_hostname_;
-	std::string master_port_;
-	int master_heartbeat_interval_seconds_;
 
-	std::unique_ptr<Server> server_;
 	std::unique_ptr<StorageInterface> storage_interface_;
+	std::unique_ptr<Server> server_;
 };
 
 

@@ -48,13 +48,13 @@ class StorageServiceTest : public ::testing::Test {
 	} 
 
 	const std::string master_hostname = "localhost";
-	const std::string master_port = "50051";
+	const std::string master_port = "50053";
 	const std::string manager1_hostname = "localhost";
-	const std::string manager1_port = "50052";
+	const std::string manager1_port = "50055";
 	const std::string manager2_hostname = "127.0.0.1";
-	const std::string manager2_port = "50053";
+	const std::string manager2_port = "50056";
 	const std::string client_hostname = "localhost";
-	const std::string client_port = "50054";
+	const std::string client_port = "50058";
 	StorageMaster master_;
 	StorageManager manager1_;
 	StorageManager manager2_;

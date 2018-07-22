@@ -28,8 +28,8 @@ class StorageClientInterfaceTest : public ::testing::Test {
 	}
 
 	void TearDown() override {
-		client_.Stop();
 		master_.Stop();
+		client_.Stop();
 		std::this_thread::sleep_for(std::chrono::milliseconds(50));
 	}
 
@@ -62,14 +62,14 @@ class StorageClientInterfaceTest : public ::testing::Test {
 // 	EXPECT_TRUE(s.ok());
 // }
 
-// TEST_F(StorageClientInterfaceTest, InstallRule) {
-// 	InstallRuleRequest request;
-// 	Status s = client_interface_->InstallRule(request);
-// 	EXPECT_TRUE(s.ok());
-// }
+TEST_F(StorageClientInterfaceTest, InstallRule) {
+	InstallRuleRequest request;
+	Status s = client_interface_->InstallRule(request);
+	EXPECT_TRUE(s.ok());
+}
 
-// TEST_F(StorageClientInterfaceTest, RemoveRule) {
-// 	RemoveRuleRequest request;
-// 	Status s = client_interface_->RemoveRule(request);
-// 	EXPECT_TRUE(s.ok());
-// }
+TEST_F(StorageClientInterfaceTest, RemoveRule) {
+	RemoveRuleRequest request;
+	Status s = client_interface_->RemoveRule(request);
+	EXPECT_TRUE(s.ok());
+}
