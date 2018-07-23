@@ -5,6 +5,7 @@ import "proto/common.proto";
 message SchedulerIntroduceRequest {
 	string rpc_uri = 1;
 	string client_rpc_uri = 2;
+	int32 maximum_tasks = 3;
 }
 
 service SchedulerService {

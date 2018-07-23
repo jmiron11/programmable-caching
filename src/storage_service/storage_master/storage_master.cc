@@ -36,6 +36,14 @@ void StorageMaster::PeerTracker::AddPeer(const std::string& name,
   connection_to_peer_[connection_uri] = name_to_peer_[name];
 }
 
+void StorageMaster::PeerTracker::PopulateViewReply(GetViewReply * reply)
+const {
+  std::lock_guard<std::mutex> lock(tracker_mutex);
+  for (auto& view : *reply->mutable_view()) {
+    view.set_uri(name_to_peer_.at(view.name())->rpc_uri);  
+  }
+}
+
 void StorageMaster::StorageFileView::ManagerFileView::AddFile(
   const std::string& file_key) {
   file_keys[file_key] = 0;
@@ -291,5 +299,6 @@ Status StorageMaster::GetView(ServerContext* context,
                               const Empty* request,
                               GetViewReply* reply) {
   file_view_.PopulateViewReply(reply);
+  peer_tracker_.PopulateViewReply(reply);
   return Status::OK;
 }

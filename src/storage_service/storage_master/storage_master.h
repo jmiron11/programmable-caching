@@ -30,6 +30,7 @@ class StorageMaster final : public MasterService::Service {
     Peer GetPeerFromConnection(const std::string& name) const;
     void AddPeer(const std::string& name, const std::string& rpc_uri,
                  const std::string& connection_uri);
+    void PopulateViewReply(GetViewReply * reply) const;
    private:
     mutable std::mutex tracker_mutex;
     std::unordered_map<std::string, std::shared_ptr<Peer>> name_to_peer_;

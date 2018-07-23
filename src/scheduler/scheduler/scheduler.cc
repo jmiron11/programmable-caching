@@ -20,7 +20,7 @@ Scheduler::Scheduler(const std::string& scheduler_hostname,
 	storage_interface_(storage_hostname, storage_port),
 	scheduler_hostname_(scheduler_hostname),
 	scheduler_port_(scheduler_port),
-	system_view_(StorageName::EPHEMERAL, 0, StorageName::FAKE_PERSISTANT, 1) {
+	system_view_(StorageName::EPHEMERAL, StorageName::FAKE_PERSISTANT) {
 }
 
 void Scheduler::Start() {
@@ -60,7 +60,7 @@ Status Scheduler::Introduce(ServerContext* context,
                             const SchedulerIntroduceRequest* request,
                             Empty* reply) {
 	// Named after rpc_uri.
-	system_view_.AddExecutionEngine(request->rpc_uri(), request->client_rpc_uri());
+	system_view_.AddExecutionEngine(request->rpc_uri(), request->client_rpc_uri(), request->maximum_tasks());
 
 	return Status::OK;
 }
