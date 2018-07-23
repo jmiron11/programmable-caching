@@ -26,12 +26,7 @@ service StorageClientService {
 	rpc RemoveRule(RemoveRuleRequest) returns (Empty) {} 
 }
 
-// Enumerates the storage types storage managers can interface with.
-enum StorageName {
-	EPHEMERAL = 0;
-	AMAZONS3 = 1;
-}
-
+// Enumerates the storage types storage managers can interface with
 enum StorageType {
 	MANAGED = 0;
 	UNMANAGED = 1;

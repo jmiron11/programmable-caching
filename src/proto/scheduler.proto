@@ -4,6 +4,7 @@ import "proto/common.proto";
 
 message SchedulerIntroduceRequest {
 	string rpc_uri = 1;
+	string client_rpc_uri = 2;
 }
 
 service SchedulerService {

@@ -6,6 +6,7 @@ cc_library(
 	srcs = ["scheduler.cc"],
 	hdrs = ["scheduler.h"],
 	deps = [
+		":serverless_system_view",
 		"//external:glog",
 		"//storage_service/rpc_interfaces:storage_master_interface",
 		"//proto:scheduler_proto",
@@ -17,5 +18,15 @@ cc_binary(
 	srcs = ["basic_scheduler_binary.cc"],
 	deps = [
 		":scheduler"
+	]
+)
+
+cc_library(
+	name = "serverless_system_view",
+	srcs = ["serverless_system_view.cc"],
+	hdrs = ["serverless_system_view.h"],
+	deps = [
+		"//proto:scheduler_proto",
+		"//proto:storage_service_proto"
 	]
 )

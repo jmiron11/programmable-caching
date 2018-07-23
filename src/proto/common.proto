@@ -58,4 +58,11 @@ message Rule {
 	repeated Action action = 4;
 }
 
+enum StorageName {
+	EPHEMERAL = 0;
+	AMAZONS3 = 1;
+	REDIS = 2;
+	FAKE_PERSISTANT = 3;
+}
+
 message Empty {}

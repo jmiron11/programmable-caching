@@ -20,6 +20,17 @@ cc_library(
 	]
 )
 
+cc_library(
+	name = "fake_persistant_interface",
+	hdrs = ["fake_persistant_interface.h"],
+	srcs = ["fake_persistant_interface.cc"],
+	deps = [
+		":storage_interface",
+		"//external:rocksdb",	
+		"//proto:storage_service_proto"
+	]
+)
+
 cc_test(
 	name = "rocksdb_storage_interface_test",
 	srcs = ["rocksdb_storage_interface_test.cc"],
