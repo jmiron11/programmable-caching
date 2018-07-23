@@ -4,6 +4,7 @@
 
 #include <vector>
 #include <string>
+#include <glog/logging.h>
 
 namespace {
 
@@ -14,7 +15,7 @@ std::string uri_to_hostname(const std::string& uri) {
 
 std::string name_to_storage_name(const std::string& name) {
 	auto first = name.find(':');
-	std::string sliced = std::string(name.begin() + first, name.end());
+	std::string sliced = std::string(name.begin() + first + 1, name.end());
 	auto second = sliced.find(':');
 	return std::string(sliced.begin(), sliced.begin() + second);
 }
@@ -24,13 +25,13 @@ std::string name_to_storage_name(const std::string& name) {
 
 ServerlessSystemView::ServerlessSystemView(StorageName ephemeral,
     StorageName persistant): ephemeral_(ephemeral), persistant_(persistant)
-     { }
+{ }
 
 
 void ServerlessSystemView::AddExecutionEngine(const std::string& exec_uri,
     const std::string& client_uri,
     int maximum_tasks) {
-  std::lock_guard<std::mutex> lock(system_mutex);	
+	std::lock_guard<std::mutex> lock(system_mutex);
 	std::string hostname = uri_to_hostname(exec_uri);
 
 	hostname_to_engine[hostname] = exec_uri;
@@ -38,28 +39,35 @@ void ServerlessSystemView::AddExecutionEngine(const std::string& exec_uri,
 	client_uri_to_engine[client_uri] = exec_uri;
 }
 
+std::vector<std::string> ServerlessSystemView::GetEphemeralStorageView(
+  const std::string& engine_name)
+const {
+	return mgr_to_keys.at(engine_to_state.at(engine_name).ephemeral_name);
+}
+
 // Changes the storage file view based off of the received GetView. Uses the
 // hostname of ephemeral managers to determine the client on the same machine.
 // Assumes 1 per host.
 void ServerlessSystemView::ParseGetViewReply(const GetViewReply& master_view) {
-  std::lock_guard<std::mutex> lock(system_mutex);	
+	std::lock_guard<std::mutex> lock(system_mutex);
 
-  // Engines are created once the storage client and manager has been mapped.
+	// Engines are created once the storage client and manager has been mapped.
 	for (const auto& view : master_view.view()) {
 		std::string hostname = uri_to_hostname(view.uri());
+		std::string engine_name = hostname_to_engine[hostname];
 
 		StorageName s_name;
 		bool success = StorageName_Parse(name_to_storage_name(view.name()), &s_name);
 		assert(success);
 
-		if(s_name == ephemeral_) {
+		if (s_name == ephemeral_) {
 			// TODO(justinmiron): unnecessary for engines that are fully defined.
-			EngineState& state = engine_to_state[hostname_to_engine[hostname]];
+			EngineState& state = engine_to_state[engine_name];
 			state.ephemeral_name = view.name();
 		} else { // s_name == persistant_
-			for(const auto& key : view.key()) {
+			for (const auto& key : view.key()) {
 				persistant_key_to_mgr[key] = view.name();
-			}	
+			}
 		}
 
 		// TODO(justinmiron): Change the deltas instead
@@ -69,32 +77,35 @@ void ServerlessSystemView::ParseGetViewReply(const GetViewReply& master_view) {
 
 	for (const auto& client : master_view.client()) {
 		std::string hostname = uri_to_hostname(client.uri());
-		EngineState& state = engine_to_state[hostname_to_engine[hostname]];
+		std::string engine_name = hostname_to_engine[hostname];
+
+		EngineState& state = engine_to_state[engine_name];
 		state.client_name = client.name();
 	}
 }
 
 void ServerlessSystemView::GetSchedulableEngines(std::vector<std::string>*
     schedulable_engines) const {
-  std::lock_guard<std::mutex> lock(system_mutex);	
-  for(const auto& name_state_pair : engine_to_state){
-  	if(name_state_pair.second.AvailableToSchedule()) {
-  		schedulable_engines->push_back(name_state_pair.first);
-  	}
-  }
+	std::lock_guard<std::mutex> lock(system_mutex);
+	schedulable_engines->clear();
+	for (const auto& name_state_pair : engine_to_state) {
+		if (name_state_pair.second.AvailableToSchedule()) {
+			schedulable_engines->push_back(name_state_pair.first);
+		}
+	}
 }
 
 // Returns the client on the same machine as the engine.
 ServerlessSystemView::EngineState ServerlessSystemView::GetEngineState(
   const std::string& engine_name) const {
-  std::lock_guard<std::mutex> lock(system_mutex);	
-  return engine_to_state.at(engine_name); 
+	std::lock_guard<std::mutex> lock(system_mutex);
+	return engine_to_state.at(engine_name);
 }
 
 // Returns the persistent manager that has a file. Allows scheduler
 // to make rules for retrieval from persistent storage.
 std::string ServerlessSystemView::GetPersistentMgrForFile(
   const std::string& file_name) const {
-  std::lock_guard<std::mutex> lock(system_mutex);	
-  return persistant_key_to_mgr.at(file_name);
+	std::lock_guard<std::mutex> lock(system_mutex);
+	return persistant_key_to_mgr.at(file_name);
 }

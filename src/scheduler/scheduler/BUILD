@@ -26,7 +26,22 @@ cc_library(
 	srcs = ["serverless_system_view.cc"],
 	hdrs = ["serverless_system_view.h"],
 	deps = [
+		"//external:glog",
 		"//proto:scheduler_proto",
 		"//proto:storage_service_proto"
+	]
+)
+
+cc_test(
+	name = "serverless_system_view_test",
+	srcs = ["serverless_system_view_test.cc"],
+  copts = [
+  	"-Iexternal/gtest",
+  ],
+	deps = [
+		"//proto:scheduler_proto",
+		"//proto:storage_service_proto",
+		":serverless_system_view",
+		"//external:gtest"
 	]
 )

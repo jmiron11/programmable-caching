@@ -37,6 +37,10 @@ class ServerlessSystemView {
 			        name != "" && client_name != "" && ephemeral_name != "");
 		}
 
+		std::string DebugString() const {
+			return name + " " + client_name + " " + ephemeral_name;
+		}
+
 		std::string name;
 		std::string client_name;
 		std::string ephemeral_name;
