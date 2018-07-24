@@ -1,6 +1,7 @@
 #include "serverless_system_view.h"
 #include "proto/scheduler.grpc.pb.h"
 #include "proto/storage_service.grpc.pb.h"
+#include "scheduler_common.h"
 
 #include <vector>
 #include <string>
@@ -22,10 +23,27 @@ std::string name_to_storage_name(const std::string& name) {
 
 }
 
-
 ServerlessSystemView::ServerlessSystemView(StorageName ephemeral,
     StorageName persistant): ephemeral_(ephemeral), persistant_(persistant)
 { }
+
+ServerlessSystemView::ServerlessSystemView(const ServerlessSystemView& view) {
+	// Lock the other view.
+	std::lock_guard<std::mutex> lock(view.system_mutex);
+
+	ephemeral_ = view.ephemeral_;
+	persistant_ = view.persistant_;
+	client_uri_to_engine = view.client_uri_to_engine;
+
+	// Currently running engines
+	engine_to_state = view.engine_to_state;
+	hostname_to_engine = view.hostname_to_engine;
+
+	// Manager to keys
+	mgr_to_keys = view.mgr_to_keys;
+	persistant_key_to_mgr = view.persistant_key_to_mgr;
+}
+
 
 
 void ServerlessSystemView::AddExecutionEngine(const std::string& exec_uri,
@@ -84,6 +102,16 @@ void ServerlessSystemView::ParseGetViewReply(const GetViewReply& master_view) {
 	}
 }
 
+void ServerlessSystemView::TasksScheduled(const SchedulingDecisions&
+    decisions) {
+	std::lock_guard<std::mutex> lock(system_mutex);
+	for(const auto& decision : decisions.decisions) {
+		EngineState & e = engine_to_state[decision.engine];
+		e.running_tasks++;
+	}
+}
+
+
 void ServerlessSystemView::GetSchedulableEngines(std::vector<std::string>*
     schedulable_engines) const {
 	std::lock_guard<std::mutex> lock(system_mutex);
@@ -96,7 +124,7 @@ void ServerlessSystemView::GetSchedulableEngines(std::vector<std::string>*
 }
 
 // Returns the client on the same machine as the engine.
-ServerlessSystemView::EngineState ServerlessSystemView::GetEngineState(
+EngineState ServerlessSystemView::GetEngineState(
   const std::string& engine_name) const {
 	std::lock_guard<std::mutex> lock(system_mutex);
 	return engine_to_state.at(engine_name);
@@ -108,4 +136,12 @@ std::string ServerlessSystemView::GetPersistentMgrForFile(
   const std::string& file_name) const {
 	std::lock_guard<std::mutex> lock(system_mutex);
 	return persistant_key_to_mgr.at(file_name);
+}
+
+
+std::string ServerlessSystemView::GetPersistentMgrForPut(const std::string& file_name) const {
+	std::lock_guard<std::mutex> lock(system_mutex);
+	// TODO(justinmiron): Implement
+	// Currently returns the mgr of the first key found
+	return persistant_key_to_mgr.at(persistant_key_to_mgr.begin()->first);
 }

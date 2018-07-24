@@ -3,6 +3,7 @@
 
 #include "proto/scheduler.grpc.pb.h"
 #include "proto/storage_service.grpc.pb.h"
+#include "scheduler_common.h"
 
 #include <vector>
 #include <string>
@@ -22,40 +23,16 @@
 
 class ServerlessSystemView {
  public:
-	class EngineState {
-	 public:
-	 	EngineState(): name(""),
-			client_name(""), ephemeral_name(""), running_tasks(0),
-			maximum_tasks(-1){ }
-		EngineState(std::string _name, int _maximum_tasks): name(_name),
-			client_name(""), ephemeral_name(""), running_tasks(0),
-			maximum_tasks(_maximum_tasks)
-		{ }
-
-		bool AvailableToSchedule() const {
-			return (running_tasks < maximum_tasks &&
-			        name != "" && client_name != "" && ephemeral_name != "");
-		}
-
-		std::string DebugString() const {
-			return name + " " + client_name + " " + ephemeral_name;
-		}
-
-		std::string name;
-		std::string client_name;
-		std::string ephemeral_name;
-		int running_tasks;
-		int maximum_tasks;
-	};
-
 	// Engines with unknown client names: Mapping from client uri -> engine name.
 	// Once view reply comes in we can move engine to maps.
 
 	// Maps: Engine -> Client
 	// Maps: Engine -> Ephemeral mgr
-
 	ServerlessSystemView(StorageName ephemeral,
 	                     StorageName persistent);
+
+	// Used for creating a snapshot of the object.
+	ServerlessSystemView(const ServerlessSystemView& view);
 
 	/* System view management API. */
 
@@ -74,6 +51,8 @@ class ServerlessSystemView {
 	std::vector<std::string> GetEphemeralStorageView(const std::string& engine_name)
 	const;
 
+	void TasksScheduled(const SchedulingDecisions& decisions);
+
 	/* Scheduler API. */
 	void GetSchedulableEngines(std::vector<std::string>* schedulable_engines) const;
 
@@ -83,6 +62,11 @@ class ServerlessSystemView {
 	// Returns the persistent manager that has a file. Allows scheduler
 	// to make rules for retrieval from persistent storage.
 	std::string GetPersistentMgrForFile(const std::string& file_name) const;
+
+	// Returns a persistent manager to write to.
+	std::string GetPersistentMgrForPut(const std::string& file_name) const;
+
+	void copy(ServerlessSystemView* view) const;
 
  private:
  	mutable std::mutex system_mutex;

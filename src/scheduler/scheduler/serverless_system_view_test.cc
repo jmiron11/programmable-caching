@@ -3,6 +3,7 @@
 #include "proto/scheduler.grpc.pb.h"
 #include "proto/storage_service.grpc.pb.h"
 #include "serverless_system_view.h"
+#include "scheduler_common.h"
 
 TEST(ServerlessSystemViewTest, GetSchedulableEngines) {
 	ServerlessSystemView system_view(StorageName::EPHEMERAL,
@@ -51,7 +52,7 @@ TEST(ServerlessSystemViewTest, GetEngineState) {
 	c->set_uri("hostname:4021");
 	system_view.ParseGetViewReply(reply);
 
-	ServerlessSystemView::EngineState e =
+	EngineState e =
 	  system_view.GetEngineState("hostname:1312");
 	EXPECT_EQ(e.client_name, "client:abcdef");
 }

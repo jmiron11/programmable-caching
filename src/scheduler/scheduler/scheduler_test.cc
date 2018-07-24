@@ -1,19 +1,19 @@
 #include "gtest/gtest.h"
 #include "storage_service/storage_master/storage_master.h"
-#include "scheduler/scheduler/scheduler.h" // nice.
-#include "scheduler_interface.h"
+#include "scheduler.h" // nice.
+#include "scheduler/rpc_interfaces/scheduler_interface.h"
 
 #include <grpcpp/grpcpp.h>
 #include <thread>
 #include <chrono>
 
 // TODO(justinmiron): Replace client with fake and remove master.
-class SchedulerInterfaceTest : public ::testing::Test {
+class SchedulerTest : public ::testing::Test {
  public:
-	SchedulerInterfaceTest():
+	SchedulerTest():
 		master_(master_hostname, master_port),
 		scheduler_(scheduler_hostname, scheduler_port,
-		        	 master_hostname, master_port, 5) { }
+		        	 master_hostname, master_port, 1) { }
 
 	void SetUp() override {
 		master_.Start();
@@ -41,22 +41,15 @@ class SchedulerInterfaceTest : public ::testing::Test {
 	std::unique_ptr<SchedulerInterface> scheduler_interface_;
 };
 
-// TODO(justinmiron): Replace when fake is implemented
-TEST_F(SchedulerInterfaceTest, SubmitJob) {
-	Job request;
-	Status s = scheduler_interface_->SubmitJob(request);
-	EXPECT_TRUE(s.ok());
+TEST_F(SchedulerTest, StartAndStop) {
+	// Should wait 5s for the scheduler loop to end.
 }
 
-TEST_F(SchedulerInterfaceTest, Done) {
-	Task request;
-	Status s = scheduler_interface_->Done(request);
+TEST_F(SchedulerTest, ExecutionEngineIntroduce) {
+	SchedulerIntroduceRequest req;
+	req.set_client_rpc_uri("hostname:1312");
+	req.set_rpc_uri("hostname:1142");
+	req.set_maximum_tasks(4);
+	Status s = scheduler_interface_->Introduce(req);
 	EXPECT_TRUE(s.ok());
 }
-
-TEST_F(SchedulerInterfaceTest, Introduce) {
-	SchedulerIntroduceRequest request;
-	Status s = scheduler_interface_->Introduce(request);
-	EXPECT_TRUE(s.ok());
-}
-
