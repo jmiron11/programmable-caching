@@ -1,9 +1,6 @@
-# Maestro
+# Programmable Caching
 
-Maestro is a serverless cluster management system that optimizes both data and
-task placement to improve system-wide performance objectives (bandwidth
-requirement reduction, system utilization), and job performance objectives
-(JCT).
+End-to-end cluster management system for storage-separated sytsems with pluggable scheduling and data movement policies. Data movement is accomplised through programmable caching (similar to programmable switches). Cluster operators may specify data movement rules that compose a caching policy and determine where to read inputs and cache inputs when jobs are scheduled.
 
 # Dependencies
  * protobuf
